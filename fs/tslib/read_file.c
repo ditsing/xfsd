@@ -275,7 +275,8 @@ long read_file_from_disk( const char *file_name, void *mem, __TSLIB___uint64_t s
 	xfs_bmbt_rec_host_t host;
 	xfs_bmbt_irec_t irec;
 
-	xfs_ino_t next_ino = find_ino_by_path( file_name);
+	xfs_ino_t next_ino;
+        next_ino = find_ino_by_path( file_name);
 
 	if ( next_ino <= 0)
 	{
