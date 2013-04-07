@@ -88,7 +88,7 @@ int read_block( int offset, void *mem, int nmeb)
 
 int init()
 {
-	if ( open_file( "tslib/xfs.lib", "r"))
+	if ( open_file( "disk/xfs.lib", "r"))
 	{
 		return -1;
 	}
