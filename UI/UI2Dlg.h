@@ -35,4 +35,9 @@ public:
 	afx_msg void OnEnChangeEdit2();
 	afx_msg void OnBnClickedButton5();
 	afx_msg void OnEnChangeEdit1();
+	afx_msg void OnBnClickedButton6();
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnBnClickedButton10();
+	afx_msg void OnEnChangeEdit4();
+	afx_msg void OnBnClickedButton2();
 };

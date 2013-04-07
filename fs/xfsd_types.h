@@ -122,7 +122,7 @@ struct rb_root
 */
 
 // For atomic_t, copied from linux/types.h
-typedef struct 
+typedef struct
 {
 	__s32 counter;
 } __TSLIB_(atomic_t);
@@ -228,7 +228,7 @@ typedef unsigned short 		__TSLIB_(umode_t);
 /*
  * Copied from xfs/xfs_linux.h
  */
-#define __arch_pack __attribute__((__packed__))
+#define __arch_pack __attribute__((packed))
 
 /*
  * Copied from linux/stddef.h

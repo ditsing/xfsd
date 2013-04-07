@@ -1,0 +1,6 @@
+build/*
+!build/makefile
+tslib/xfs.lib
+need_update.txt
+disk
+pack.lst
