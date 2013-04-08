@@ -53,7 +53,9 @@ typedef __s64 	__TSLIB_(__int64_t);
 typedef __u64	__TSLIB_(__uint64_t);
 
 #ifndef __XFS_TYPES_H__
+/*
 typedef enum { __TSLIB_(B_FALSE), __TSLIB_(B_TRUE) }	__TSLIB_(boolean_t);
+*/
 typedef __TSLIB_(__uint32_t)		__TSLIB_(prid_t);		/* project ID */
 typedef __TSLIB_(__uint32_t)		__TSLIB_(inst_t);		/* an instruction */
 
@@ -267,10 +269,9 @@ typedef __TSLIB_(__kernel_loff_t)	__TSLIB_(loff_t);
 typedef int (*filldir_t)(void *, const char *, int, __TSLIB_(loff_t), __u64, unsigned);
 
 /*
- * Copied from include/linux/types.h
+ * Copied from linux/types.h
  */
 typedef long 				__TSLIB_(time_t);
-
 
 /*
  * Copied from ioctl.h
@@ -278,5 +279,23 @@ typedef long 				__TSLIB_(time_t);
 #ifndef __user
 #define __user
 #endif
+
+#ifndef __cpluspluc
+typedef int bool;
+#endif
+
+/*
+ * Copied from linux/uapi/asm-generic/posix_types.h
+ */
+typedef unsigned int 			__TSLIB_(__kernel_gid_t);
+typedef unsigned int 			__TSLIB_(__kernel_uid_t);
+
+/*
+ * Copied from linux/types.h
+ */
+typedef __TSLIB_(__kernel_gid_t)	__TSLIB_(gid_t);
+typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
+
+struct xfs_buf;
 
 #endif

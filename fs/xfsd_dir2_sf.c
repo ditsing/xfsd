@@ -28,12 +28,8 @@
 #include "xfs/xfs_da_btree.h"
 #include "xfs/xfs_bmap_btree.h"
 #include "xfs/xfs_dinode.h"
-#define __KERNEL__
 #include "xfs/xfs_inode.h"
-#undef __KERNEL__
-#define __KERNEL__
 #include "xfs/xfs_mount.h"
-#undef __KERNEL__
 #include "xfs/xfs_trans.h"
 #include "xfs/xfs_inode_item.h"
 #include "xfs/xfs_error.h"

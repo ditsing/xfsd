@@ -4,6 +4,7 @@
 #ifdef CONfiG_XFS_DEBUG
 #endif
 #include "xfs/uuid.h"
+#define __KERNEL__
 
 /*
  * Copied from include/linux/stat.h

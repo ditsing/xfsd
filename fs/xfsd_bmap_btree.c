@@ -30,13 +30,9 @@
 #include "xfs/xfs_alloc_btree.h"
 #include "xfs/xfs_ialloc_btree.h"
 #include "xfs/xfs_dinode.h"
-#define __KERNEL__
 #include "xfs/xfs_inode.h"
-#undef __KERNEL__
 #include "xfs/xfs_trans.h"
-#define __KERNEL__
 #include "xfs/xfs_mount.h"
-#undef __KERNEL__
 #include "xfs/xfs_inode_item.h"
 #include "xfs/xfs_alloc.h"
 #include "xfs/xfs_btree.h"
