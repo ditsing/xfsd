@@ -21,7 +21,6 @@
 
 #include "xfs/xfs_fs.h"
 #include "xfs/xfs_types.h"
-#include "xfs/xfs_inum.h"
 #include "xfs/xfs_log.h"
 #include "xfs/xfs_sb.h"
 #include "xfs/xfs_ag.h"
@@ -30,7 +29,6 @@
 #include "xfs/xfs_dinode.h"
 #include "xfs/xfs_inode.h"
 #include "xfs/xfs_mount.h"
-#include "xfs/xfs_trans.h"
 #include "xfs/xfs_inode_item.h"
 #include "xfs/xfs_error.h"
 #include "xfs/xfs_dir2.h"

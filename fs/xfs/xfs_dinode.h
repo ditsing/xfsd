@@ -33,7 +33,7 @@ typedef struct xfs_timestamp {
  * variable size the leftover area split into a data and an attribute fork.
  * The format of the data and attribute fork depends on the format of the
  * inode as indicated by di_format and di_aformat.  To access the data and
- * attribute use the XFS_DFORK_PTR, XFS_DFORK_DPTR, and XFS_DFORK_PTR macros
+ * attribute use the XFS_DFORK_DPTR, XFS_DFORK_APTR, and XFS_DFORK_PTR macros
  * below.
  *
  * There is a very similar struct icdinode in xfs_inode which matches the
@@ -104,7 +104,7 @@ typedef enum xfs_dinode_fmt {
 /*
  * Inode size for given fs.
  */
-#define XFS_LITINO(mp) \
+#define XFS_LITINO(mp, version) \
 	((int)(((mp)->m_sb.sb_inodesize) - sizeof(struct xfs_dinode)))
 
 #define	XFS_BROOT_SIZE_ADJ	\
@@ -119,10 +119,10 @@ typedef enum xfs_dinode_fmt {
 #define XFS_DFORK_DSIZE(dip,mp) \
 	(XFS_DFORK_Q(dip) ? \
 		XFS_DFORK_BOFF(dip) : \
-		XFS_LITINO(mp))
+		XFS_LITINO(mp, (dip)->di_version))
 #define XFS_DFORK_ASIZE(dip,mp) \
 	(XFS_DFORK_Q(dip) ? \
-		XFS_LITINO(mp) - XFS_DFORK_BOFF(dip) : \
+		XFS_LITINO(mp, (dip)->di_version) - XFS_DFORK_BOFF(dip) : \
 		0)
 #define XFS_DFORK_SIZE(dip,mp,w) \
 	((w) == XFS_DATA_FORK ? \

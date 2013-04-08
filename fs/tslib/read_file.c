@@ -10,20 +10,15 @@
 #include "xfs/xfs_ag.h"
 #include "xfs/xfs_dinode.h"
 #include "xfs/xfs_bmap_btree.h"
-#include "xfs/uuid.h"
-#define __KERNEL__
 #include "xfs/xfs_inode.h"
-#undef __KERNEL__
 
 #include "xfs/xfs_sb.h"
 
 #include "xfs/xfs_da_btree.h"
-#define __KERNEL__
 #include "xfs/xfs_mount.h"
-#undef __KERNEL__
 #include "xfs/xfs_dir2_format.h"
 
-/* 
+/*
  * For the function in xfs_dir2_sf.c
  */
 #include "xfs/xfs_dir2_priv.h"
@@ -117,8 +112,8 @@ xfs_dinode_t *read_inode_relative( xfs_agino_t inode, xfs_icdinode_t *mem)
 	xfs_agblock_t blocks;
 	xfs_daddr_t inoblock;
 	xfs_dinode_t *temp;
-	xfs_daddr_t offset; 
-	/* 
+	xfs_daddr_t offset;
+	/*
 	 * There are something dealing with xfs_agino_t in xfs_inum.h.
 	 * But they all rely on xfs_mount.
 	 * So I will use my own.

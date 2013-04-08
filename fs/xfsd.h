@@ -3,7 +3,7 @@
 
 #ifdef CONfiG_XFS_DEBUG
 #endif
-#include "xfs/uuid.h"
+
 #define __KERNEL__
 
 /*

@@ -17,9 +17,7 @@
  */
 #include "xfs.h"
 #include "xfs_fs.h"
-#include "xfs_bit.h"
 #include "xfs_log.h"
-#include "xfs_inum.h"
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
@@ -148,29 +146,11 @@ xfs_qm_newmount(
 			 * inode goes inactive and wants to free blocks,
 			 * or via xfs_log_mount_finish.
 			 */
-			*needquotamount = B_TRUE;
+			*needquotamount = true;
 			*quotaflags = mp->m_qflags;
 			mp->m_qflags = 0;
 		}
 	}
 
 	return 0;
-}
-
-void __init
-xfs_qm_init(void)
-{
-	printk(KERN_INFO "SGI XFS Quota Management subsystem\n");
-	mutex_init(&xfs_Gqm_lock);
-	xfs_qm_init_procfs();
-}
-
-void __exit
-xfs_qm_exit(void)
-{
-	xfs_qm_cleanup_procfs();
-	if (qm_dqzone)
-		kmem_zone_destroy(qm_dqzone);
-	if (qm_dqtrxzone)
-		kmem_zone_destroy(qm_dqtrxzone);
 }

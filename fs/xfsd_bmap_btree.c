@@ -31,7 +31,6 @@
 #include "xfs/xfs_ialloc_btree.h"
 #include "xfs/xfs_dinode.h"
 #include "xfs/xfs_inode.h"
-#include "xfs/xfs_trans.h"
 #include "xfs/xfs_mount.h"
 #include "xfs/xfs_inode_item.h"
 #include "xfs/xfs_alloc.h"

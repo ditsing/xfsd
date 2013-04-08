@@ -2,7 +2,6 @@
 #include "xfsd_types.h"
 #include "syscall.h"
 
-#include "xfs/uuid.h"
 #include "xfs/xfs_types.h"
 #include "xfs/xfs_sb.h"
 

@@ -280,7 +280,7 @@ typedef long 				__TSLIB_(time_t);
 #define __user
 #endif
 
-#ifndef __cpluspluc
+#ifndef __cplusplus
 typedef int bool;
 #endif
 
@@ -296,6 +296,27 @@ typedef unsigned int 			__TSLIB_(__kernel_uid_t);
 typedef __TSLIB_(__kernel_gid_t)	__TSLIB_(gid_t);
 typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
 
-struct xfs_buf;
+/*
+ * For xfs_log.h
+ */
+struct __TSLIB_(xfs_buf);
+
+/*
+ * Copied from fs/xfs/kmem.h
+ */
+typedef unsigned __TSLIB_(xfs_km_flags_t);
+
+/*
+ * Copied from xfs_trans.h
+ * For xfs_inode_item.h
+ */
+FAKE_STRUCT_TYPE(xfs_log_item);
+
+/*
+ * Copied from xfs/uuid.h
+ */
+typedef struct {
+	unsigned char	__u_bits[16];
+} __TSLIB_(uuid_t);
 
 #endif
