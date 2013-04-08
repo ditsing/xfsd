@@ -1,4 +1,5 @@
 // All the else branch in ifdef WIN32 is of NO USE when compiling!!
+// xfsd.h and xfsd_types.h must be included BEFORE xfs.h and xfs_types.h!
 #ifndef __XFSD_TYPES_H__
 #define __XFSD_TYPES_H__
 
@@ -52,10 +53,6 @@ typedef __u32	__TSLIB_(__uint32_t);
 typedef __s64 	__TSLIB_(__int64_t);
 typedef __u64	__TSLIB_(__uint64_t);
 
-#ifndef __XFS_TYPES_H__
-/*
-typedef enum { __TSLIB_(B_FALSE), __TSLIB_(B_TRUE) }	__TSLIB_(boolean_t);
-*/
 typedef __TSLIB_(__uint32_t)		__TSLIB_(prid_t);		/* project ID */
 typedef __TSLIB_(__uint32_t)		__TSLIB_(inst_t);		/* an instruction */
 
@@ -75,7 +72,6 @@ typedef __TSLIB_(__int64_t) __TSLIB_(__psint_t);
 typedef __TSLIB_(__uint64_t) __TSLIB_(__psunsigned_t);
 #else
 #error BITS_PER_LONG must be 32 or 64
-#endif
 #endif
 
 // Copied from linux/swab.h
