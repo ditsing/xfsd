@@ -23,6 +23,7 @@
 #include "xfs/xfs_types.h"
 #include "xfs/xfs_bit.h"
 #include "xfs/xfs_log.h"
+#include "xfs/xfs_trans.h"
 #include "xfs/xfs_inum.h"
 #include "xfs/xfs_sb.h"
 #include "xfs/xfs_ag.h"

@@ -17,11 +17,11 @@
  */
 #include "xfsd.h"
 #include "xfsd_types.h"
-#include "linux/rbtree.h"
 
 #include "xfs/xfs_fs.h"
 #include "xfs/xfs_types.h"
 #include "xfs/xfs_log.h"
+#include "xfs/xfs_trans.h"
 #include "xfs/xfs_sb.h"
 #include "xfs/xfs_ag.h"
 #include "xfs/xfs_mount.h"

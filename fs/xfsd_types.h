@@ -235,8 +235,8 @@ typedef unsigned short 		__TSLIB_(umode_t);
 
 /*
  * Copied from xfs/xfs_buf.h, used in xfs_mount.h.
- */
 FAKE_STRUCT_TYPE( xfs_buftarg);
+ */
 
 /*
  * Copied from linux/workqueue.h, used in xfs_mount.h.
@@ -281,13 +281,13 @@ typedef int bool;
 #endif
 
 /*
- * Copied from linux/uapi/asm-generic/posix_types.h
+ * Copied from linux/uapi/asm-generic/posix_types.h, used in xfs_mount.h
  */
 typedef unsigned int 			__TSLIB_(__kernel_gid_t);
 typedef unsigned int 			__TSLIB_(__kernel_uid_t);
 
 /*
- * Copied from linux/types.h
+ * Copied from linux/types.h, used in xfs_mount.h
  */
 typedef __TSLIB_(__kernel_gid_t)	__TSLIB_(gid_t);
 typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
@@ -298,6 +298,23 @@ typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
 struct __TSLIB_(xfs_buf);
 
 /*
+ * For xfs_trans.h
+ */
+/*
+struct __TSLIB_(xfs_buf_map) {
+	xfs_daddr_t		bm_bn;
+	int			bm_len;
+};
+*/
+
+/*
+struct __TSLIB_(xfs_buf_map);
+struct __TSLIB_(xfs_buf_ops);
+*/
+#define DEFINE_SINGLE_BUF_MAP(map, blkno, numblk) \
+	struct xfs_buf_map (map) = { .bm_bn = (blkno), .bm_len = (numblk) };
+
+/*
  * Copied from fs/xfs/kmem.h
  */
 typedef unsigned __TSLIB_(xfs_km_flags_t);
@@ -305,8 +322,8 @@ typedef unsigned __TSLIB_(xfs_km_flags_t);
 /*
  * Copied from xfs_trans.h
  * For xfs_inode_item.h
- */
 FAKE_STRUCT_TYPE(xfs_log_item);
+ */
 
 /*
  * Copied from xfs/uuid.h
@@ -314,5 +331,19 @@ FAKE_STRUCT_TYPE(xfs_log_item);
 typedef struct {
 	unsigned char	__u_bits[16];
 } __TSLIB_(uuid_t);
+
+/*
+ * Copied from xfs/xfs_buf.h
+ */
+typedef unsigned __TSLIB_(xfs_buf_flags_t);
+
+/*
+ * Used in xfs/xfs_buf.h
+ */
+FAKE_STRUCT(semaphore);
+FAKE_STRUCT_TYPE(dev);
+FAKE_STRUCT_TYPE(wait_queue_head);
+FAKE_STRUCT(completion);
+
 
 #endif
