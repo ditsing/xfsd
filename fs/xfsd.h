@@ -59,12 +59,35 @@
 #include "syscall.h"
 #define memcpy mem_cpy
 #define memmove mem_move
+#define memset mem_set
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
 #include "xfsd_buf.h"
+#include "xfsd_globals.h"
 
 #define __return_address (0)
 
+#define min_t(type, x, y) ({			\
+	type __min1 = (x);			\
+	type __min2 = (y);			\
+	__min1 < __min2 ? __min1: __min2; })
+
+#define max_t(type, x, y) ({			\
+	type __max1 = (x);			\
+	type __max2 = (y);			\
+	__max1 > __max2 ? __max1: __max2; })
+
+#define likely(x) (x)
+#define unlikely(x) (x)
+
+
+/*
+ * Need to be updated
+ */
+#define kmem_alloc(x, y) ( ( void *)0)
+#define kmem_zalloc(x, y) ( ( void *)0)
+#define kmem_free(x) ( 0)
+#define kmem_zone_zalloc(x, y) ( ( void *)0)
 #endif
 

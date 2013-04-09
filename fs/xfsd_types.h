@@ -345,5 +345,12 @@ FAKE_STRUCT_TYPE(dev);
 FAKE_STRUCT_TYPE(wait_queue_head);
 FAKE_STRUCT(completion);
 
+/*
+ * Copied from linux/kernel.h, used by xfs/xfs_attr.h
+ */
+typedef long __kernel_size_t;
+typedef __kernel_size_t ssize_t;
+
+
 
 #endif
