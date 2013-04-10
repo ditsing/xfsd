@@ -2,6 +2,15 @@
 #define __XFSD_ASM_H__
 #include "xfsd_types.h"
 
+#define ATOMIC_INIT(i)		{ (i) }
+#define ATOMIC64_INIT(i)	{ (i) }
+
+#define atomic_read(v)		(*(volatile int *)&(v)->counter)
+#define atomic64_read(v)	(*(volatile long *)&(v)->counter)
+
+#define atomic_set(v,i)		((v)->counter = (i))
+#define atomic64_set(v,i)	((v)->counter = (i))
+
 static inline __u16 get_unaligned_be16( const void *p)
 {
 	__be16 ret;
@@ -70,7 +79,7 @@ static inline void put_unaligned_be64( __u64 num, void *p)
 	__u8 *left;
 	__u8 *right;
 	num = be64_to_cpu( num);
-	left = ( __u8 *) p; 
+	left = ( __u8 *) p;
 	right = ( __u8 *) & num;
 
 	*(left++) = *(right++);

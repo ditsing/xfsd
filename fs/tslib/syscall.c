@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+
+#include "tslib.h"
 #include "syscall.h"
 
 static FILE *file;
@@ -41,9 +43,14 @@ int seek_file_end( long offset)
 	return fseek( file, offset, SEEK_END);
 }
 
-void *mem_cpy( void *dst, void *src, int n)
+void *mem_cpy( void *dst, const void *src, int n)
 {
 	return memcpy( dst, src, n);
+}
+
+void *mem_move( void *dst, const void *src, int n)
+{
+	return memmove( dst, src, n);
 }
 
 void *mem_set( void *s, int c, long n)

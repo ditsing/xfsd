@@ -53,18 +53,18 @@
 #define XFS_BIT_BLKNOS 	1
 #define XFS_BIT_INUMS  	1
 #define STATIC static
+
 #include "xfsd_asm.h"
 
-
-#include "syscall.h"
-#define memcpy mem_cpy
-#define memmove mem_move
-#define memset mem_set
+#include "tslib/syscall.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
+#include "linux/bytes.h"
+
 #include "xfsd_buf.h"
 #include "xfsd_globals.h"
+#include "xfsd_stats.h"
 
 #define __return_address (0)
 
@@ -78,9 +78,24 @@
 	type __max2 = (y);			\
 	__max1 > __max2 ? __max1: __max2; })
 
+#define min(x, y) ({				\
+	typeof(x) _min1 = (x);			\
+	typeof(y) _min2 = (y);			\
+	(void) (&_min1 == &_min2);		\
+	_min1 < _min2 ? _min1 : _min2; })
+
+#define max(x, y) ({				\
+	typeof(x) _max1 = (x);			\
+	typeof(y) _max2 = (y);			\
+	(void) (&_max1 == &_max2);		\
+	_max1 > _max2 ? _max1 : _max2; })
+
 #define likely(x) (x)
 #define unlikely(x) (x)
 
+#define MIN(a,b)	(min(a,b))
+#define MAX(a,b)	(max(a,b))
+#define howmany(x, y)	(((x)+((y)-1))/(y))
 
 /*
  * Need to be updated
@@ -89,5 +104,6 @@
 #define kmem_zalloc(x, y) ( ( void *)0)
 #define kmem_free(x) ( 0)
 #define kmem_zone_zalloc(x, y) ( ( void *)0)
+#define kmem_zone_free(x, y) ( 0)
 #endif
 

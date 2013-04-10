@@ -35,10 +35,13 @@ typedef unsigned short __u16;
 typedef signed char __s8;
 typedef unsigned char __u8;
 
-// That means big endian 64
-typedef __u64 __be64;
-typedef __u32 __be32;
+// That means big/little endian 64
+typedef __u16 __le16;
 typedef __u16 __be16;
+typedef __u32 __le32;
+typedef __u32 __be32;
+typedef __u64 __le64;
+typedef __u64 __be64;
 
 // Basic types.
 /*
@@ -351,6 +354,15 @@ FAKE_STRUCT(completion);
 typedef long __kernel_size_t;
 typedef __kernel_size_t ssize_t;
 
+/*
+ * Copied from linux/types.h used by xfs_vnodeops.h
+ */
 
+typedef		__u8		u_int8_t;
+typedef		__s8		int8_t;
+typedef		__u16		u_int16_t;
+typedef		__s16		int16_t;
+typedef		__u32		u_int32_t;
+typedef		__s32		int32_t;
 
 #endif
