@@ -12,7 +12,8 @@ OBJS = read_super.o		\
        xfsd_da_tree.o		\
        xfsd_dir2.o 		\
        xfsd_dir2_block.o 	\
-       xfsd_dir2_data.o
+       xfsd_dir2_data.o 	\
+       sort.o
 
 hello: hello.c $(OBJS)
 

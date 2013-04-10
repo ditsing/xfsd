@@ -97,6 +97,11 @@
 #define MAX(a,b)	(max(a,b))
 #define howmany(x, y)	(((x)+((y)-1))/(y))
 
+void sort(void *base, size_t num, size_t size,
+	  int (*cmp_func)(const void *, const void *),
+	  void (*swap_func)(void *, void *, int size));
+#define xfs_sort(a,n,s,fn)	sort(a,n,s,fn,NULL)
+
 /*
  * Need to be updated
  */

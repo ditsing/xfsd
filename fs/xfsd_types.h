@@ -35,6 +35,16 @@ typedef unsigned short __u16;
 typedef signed char __s8;
 typedef unsigned char __u8;
 
+typedef signed char s8;
+typedef unsigned char u8;
+typedef signed short s16;
+typedef unsigned short u16;
+typedef signed int s32;
+typedef unsigned int u32;
+typedef signed long long s64;
+typedef unsigned long long u64;
+
+
 // That means big/little endian 64
 typedef __u16 __le16;
 typedef __u16 __be16;
