@@ -13,7 +13,12 @@ OBJS = read_super.o		\
        xfsd_dir2.o 		\
        xfsd_dir2_block.o 	\
        xfsd_dir2_data.o 	\
-       sort.o
+       sort.o 			\
+       xfsd_message.o 		\
+       xfsd_error.o 		\
+       xfsd_attr_leaf.o 	\
+       xfsd_attr.o
+	
 
 hello: hello.c $(OBJS)
 

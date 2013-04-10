@@ -17,14 +17,14 @@
 #include "xfsd_errno.h"
 
 /*
- * Copide from xfs/xfs_linux.h
+ * Copied from xfs/xfs_linux.h
  */
 #define ENOATTR		ENODATA		/* Attribute not found */
 #define EWRONGFS	EINVAL		/* Mount with wrong filesystem type */
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
 /*
- * Copide from xfs/kmem.h
+ * Copied from xfs/kmem.h
  */
 #define KM_SLEEP	0x0001u
 #define KM_NOSLEEP	0x0002u
@@ -65,6 +65,7 @@
 #include "xfsd_buf.h"
 #include "xfsd_globals.h"
 #include "xfsd_stats.h"
+#include "xfsd_message.h"
 
 #define __return_address (0)
 
@@ -101,6 +102,7 @@ void sort(void *base, size_t num, size_t size,
 	  int (*cmp_func)(const void *, const void *),
 	  void (*swap_func)(void *, void *, int size));
 #define xfs_sort(a,n,s,fn)	sort(a,n,s,fn,NULL)
+#define xfs_stack_trace()
 
 /*
  * Need to be updated

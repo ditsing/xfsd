@@ -19,6 +19,7 @@ int read_file_length( void *ptr, long offset, int size, int nmemb);
 #define memcpy mem_cpy
 #define memmove mem_move
 #define memset mem_set
+#define strlen str_len
 
 #endif
 #endif
