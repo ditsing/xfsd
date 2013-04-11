@@ -9,11 +9,7 @@
 /*
  * Copied from include/linux/stat.h
  */
-#define S_IFLNK	 0120000
-#define S_IFREG  0100000
-#define S_IFDIR  0040000
-#define S_IFMT  00170000
-
+#include "linux/stat.h"
 #include "xfsd_errno.h"
 
 /*
@@ -61,6 +57,8 @@
 #include "linux/defs.h"
 #include "linux/rbtree.h"
 #include "linux/bytes.h"
+#include "linux/inode.h"
+#include "radix-tree.h"
 
 #include "xfsd_buf.h"
 #include "xfsd_globals.h"
@@ -68,6 +66,7 @@
 #include "xfsd_message.h"
 
 #define __return_address (0)
+#define __releases(x)
 
 #define min_t(type, x, y) ({			\
 	type __min1 = (x);			\
@@ -104,13 +103,36 @@ void sort(void *base, size_t num, size_t size,
 #define xfs_sort(a,n,s,fn)	sort(a,n,s,fn,NULL)
 #define xfs_stack_trace()
 
+#define EXPORT_SYMBOL(x)
+
+/*
+ * From compiler
+ */
+#define uninitialized_var(x) x = x
+
+/*
+ * From kernel.h
+ */
+#define ULONG_MAX (~0UL)
+
+/*
+ * From shed.h
+ */
+#define PF_FSTRANS	0x00020000	/* inside a filesystem transaction */
+
+
 /*
  * Need to be updated
  */
 #define kmem_alloc(x, y) ( ( void *)0)
 #define kmem_zalloc(x, y) ( ( void *)0)
+#define kmem_zalloc_large(x) ( ( void *)0)
+#define kmem_realloc(x, y, u, v) ( ( void *)0)
 #define kmem_free(x) ( 0)
+#define kmem_free_large(x) ( 0)
+#define kmem_zone_alloc(x, y) ( ( void *)0)
 #define kmem_zone_zalloc(x, y) ( ( void *)0)
 #define kmem_zone_free(x, y) ( 0)
+#define TASK_UNINTERRUPTIBLE 2
 #endif
 

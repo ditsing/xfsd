@@ -1,5 +1,5 @@
-#ifndef __XFSD_BYTES_H__
-#define __XFSD_BYTES_H__
+#ifndef __LINUX_BYTES_H__
+#define __LINUX_BYTES_H__
 
 /*
  * Copied from linux/byteorder/generic.h

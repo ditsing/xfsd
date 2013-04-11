@@ -17,7 +17,17 @@ OBJS = read_super.o		\
        xfsd_message.o 		\
        xfsd_error.o 		\
        xfsd_attr_leaf.o 	\
-       xfsd_attr.o
+       xfsd_attr.o 		\
+       xfsd_inode.o 		\
+       radix-tree.o 		\
+       xfsd_buf.o 		\
+       xfsd_bmap.o 		\
+       xfsd_btree.o 		\
+       xfsd_alloc.o 		\
+       xfsd_ialloc.o 		\
+       xfsd_alloc_btree.o 	\
+       xfsd_ialloc_btree.o 	\
+       xfsd_da_btree.o
 	
 
 hello: hello.c $(OBJS)
@@ -28,3 +38,10 @@ dll: read_super.o syscall.o read_file.o xfsd_dir2_sf.o xfsd_bmap_btree.o
 clean:
 	rm -f hello
 	rm -f *.o
+	rm -f *.d
+
+%.d: %.c makefile
+	bash -ec '$(CC) -MM $(CFLAGS) $< | sed '\''s/\($*\.o\)[ :]*/\1 $@ : /g'\'' > $@'
+
+-include $(OBJS:.o=.d)
+

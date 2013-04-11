@@ -152,12 +152,15 @@ typedef struct
 } __TSLIB_(spinlock_t);
 
 // Fake radix_tree_root
+// No need any more. Provided by radix-tree from libxfs.
+/*
 struct __TSLIB_(radix_tree_root)
 {
 	__u32 height;
 	__u32 gfp_mask;
 	struct __TSLIB_(radix_tree_root) *rnode;
 };
+*/
 
 // mutex ???, This is a seriouse problem.
 FAKE_STRUCT( mutex);
@@ -224,7 +227,9 @@ FAKE_STRUCT_TYPE(mrlock);
 /*
  * Fake struct inode, used in xfs_inode.h
  */
+/*
 FAKE_STRUCT(inode);
+*/
 
 /*
  * Fake container_of, used in xfs_inode.h
@@ -291,6 +296,8 @@ typedef long 				__TSLIB_(time_t);
 
 #ifndef __cplusplus
 typedef int bool;
+#define false 0
+#define true  1
 #endif
 
 /*
@@ -374,5 +381,26 @@ typedef		__u16		u_int16_t;
 typedef		__s16		int16_t;
 typedef		__u32		u_int32_t;
 typedef		__s32		int32_t;
+
+typedef struct __TSLIB_(timespec) {
+	long	tv_sec;			/* seconds */
+	long	tv_nsec;		/* nanoseconds */
+} __TSLIB_(timespec_t);
+
+/*
+ * For inode.h
+ */
+FAKE_STRUCT(address_space);
+FAKE_STRUCT(hlist_node);
+FAKE_STRUCT(hlist_head);
+typedef __TSLIB_(gid_t) __TSLIB_(kgid_t);
+typedef __TSLIB_(uid_t) __TSLIB_(kuid_t);
+// From linxu/types.h
+typedef u64 __TSLIB_(blkcnt_t);
+
+struct __TSLIB_(super_block)
+{
+	u64 s_maxbytes;
+};
 
 #endif

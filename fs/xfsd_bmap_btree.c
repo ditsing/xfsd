@@ -16,23 +16,20 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "xfsd.h"
-#include "xfsd_types.h"
-#include "linux/rbtree.h"
 
 #include "xfs/xfs_fs.h"
 #include "xfs/xfs_types.h"
 #include "xfs/xfs_bit.h"
 #include "xfs/xfs_log.h"
 #include "xfs/xfs_trans.h"
-#include "xfs/xfs_inum.h"
 #include "xfs/xfs_sb.h"
 #include "xfs/xfs_ag.h"
+#include "xfs/xfs_mount.h"
 #include "xfs/xfs_bmap_btree.h"
 #include "xfs/xfs_alloc_btree.h"
 #include "xfs/xfs_ialloc_btree.h"
 #include "xfs/xfs_dinode.h"
 #include "xfs/xfs_inode.h"
-#include "xfs/xfs_mount.h"
 #include "xfs/xfs_inode_item.h"
 #include "xfs/xfs_alloc.h"
 #include "xfs/xfs_btree.h"
@@ -40,6 +37,8 @@
 #include "xfs/xfs_bmap.h"
 #include "xfs/xfs_error.h"
 #include "xfs/xfs_quota.h"
+
+#include "xfsd_trace.h"
 
 /*
  * Determine the extent state.
@@ -86,8 +85,8 @@ xfs_bmdr_to_bmbt(
 	fpp = XFS_BMDR_PTR_ADDR(dblock, 1, dmxr);
 	tpp = XFS_BMAP_BROOT_PTR_ADDR(mp, rblock, 1, rblocklen);
 	dmxr = be16_to_cpu(dblock->bb_numrecs);
-	mem_cpy(tkp, fkp, sizeof(*fkp) * dmxr);
-	mem_cpy(tpp, fpp, sizeof(*fpp) * dmxr);
+	memcpy(tkp, fkp, sizeof(*fkp) * dmxr);
+	memcpy(tpp, fpp, sizeof(*fpp) * dmxr);
 }
 
 /*
@@ -439,8 +438,54 @@ xfs_bmbt_to_bmdr(
 	fpp = XFS_BMAP_BROOT_PTR_ADDR(mp, rblock, 1, rblocklen);
 	tpp = XFS_BMDR_PTR_ADDR(dblock, 1, dmxr);
 	dmxr = be16_to_cpu(dblock->bb_numrecs);
-	mem_cpy(tkp, fkp, sizeof(*fkp) * dmxr);
-	mem_cpy(tpp, fpp, sizeof(*fpp) * dmxr);
+	memcpy(tkp, fkp, sizeof(*fkp) * dmxr);
+	memcpy(tpp, fpp, sizeof(*fpp) * dmxr);
+}
+
+/*
+ * Check extent records, which have just been read, for
+ * any bit in the extent flag field. ASSERT on debug
+ * kernels, as this condition should not occur.
+ * Return an error condition (1) if any flags found,
+ * otherwise return 0.
+ */
+
+int
+xfs_check_nostate_extents(
+	xfs_ifork_t		*ifp,
+	xfs_extnum_t		idx,
+	xfs_extnum_t		num)
+{
+	for (; num > 0; num--, idx++) {
+		xfs_bmbt_rec_host_t *ep = xfs_iext_get_ext(ifp, idx);
+		if ((ep->l0 >>
+		     (64 - BMBT_EXNTFLAG_BITLEN)) != 0) {
+			ASSERT(0);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+STATIC struct xfs_btree_cur *
+xfs_bmbt_dup_cursor(
+	struct xfs_btree_cur	*cur)
+{
+	struct xfs_btree_cur	*new;
+
+	new = xfs_bmbt_init_cursor(cur->bc_mp, cur->bc_tp,
+			cur->bc_private.b.ip, cur->bc_private.b.whichfork);
+
+	/*
+	 * Copy the firstblock, flist, and flags values,
+	 * since init cursor doesn't get them.
+	 */
+	new->bc_private.b.firstblock = cur->bc_private.b.firstblock;
+	new->bc_private.b.flist = cur->bc_private.b.flist;
+	new->bc_private.b.flags = cur->bc_private.b.flags;
+
+	return new;
 }
 
 STATIC void
@@ -456,6 +501,111 @@ xfs_bmbt_update_cursor(
 	dst->bc_private.b.firstblock = src->bc_private.b.firstblock;
 
 	src->bc_private.b.allocated = 0;
+}
+
+STATIC int
+xfs_bmbt_alloc_block(
+	struct xfs_btree_cur	*cur,
+	union xfs_btree_ptr	*start,
+	union xfs_btree_ptr	*new,
+	int			length,
+	int			*stat)
+{
+	xfs_alloc_arg_t		args;		/* block allocation args */
+	int			error;		/* error return value */
+
+	memset(&args, 0, sizeof(args));
+	args.tp = cur->bc_tp;
+	args.mp = cur->bc_mp;
+	args.fsbno = cur->bc_private.b.firstblock;
+	args.firstblock = args.fsbno;
+
+	if (args.fsbno == NULLFSBLOCK) {
+		args.fsbno = be64_to_cpu(start->l);
+		args.type = XFS_ALLOCTYPE_START_BNO;
+		/*
+		 * Make sure there is sufficient room left in the AG to
+		 * complete a full tree split for an extent insert.  If
+		 * we are converting the middle part of an extent then
+		 * we may need space for two tree splits.
+		 *
+		 * We are relying on the caller to make the correct block
+		 * reservation for this operation to succeed.  If the
+		 * reservation amount is insufficient then we may fail a
+		 * block allocation here and corrupt the filesystem.
+		 */
+		args.minleft = xfs_trans_get_block_res(args.tp);
+	} else if (cur->bc_private.b.flist->xbf_low) {
+		args.type = XFS_ALLOCTYPE_START_BNO;
+	} else {
+		args.type = XFS_ALLOCTYPE_NEAR_BNO;
+	}
+
+	args.minlen = args.maxlen = args.prod = 1;
+	args.wasdel = cur->bc_private.b.flags & XFS_BTCUR_BPRV_WASDEL;
+	if (!args.wasdel && xfs_trans_get_block_res(args.tp) == 0) {
+		error = XFS_ERROR(ENOSPC);
+		goto error0;
+	}
+	error = xfs_alloc_vextent(&args);
+	if (error)
+		goto error0;
+
+	if (args.fsbno == NULLFSBLOCK && args.minleft) {
+		/*
+		 * Could not find an AG with enough free space to satisfy
+		 * a full btree split.  Try again without minleft and if
+		 * successful activate the lowspace algorithm.
+		 */
+		args.fsbno = 0;
+		args.type = XFS_ALLOCTYPE_FIRST_AG;
+		args.minleft = 0;
+		error = xfs_alloc_vextent(&args);
+		if (error)
+			goto error0;
+		cur->bc_private.b.flist->xbf_low = 1;
+	}
+	if (args.fsbno == NULLFSBLOCK) {
+		XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+		*stat = 0;
+		return 0;
+	}
+	ASSERT(args.len == 1);
+	cur->bc_private.b.firstblock = args.fsbno;
+	cur->bc_private.b.allocated++;
+	cur->bc_private.b.ip->i_d.di_nblocks++;
+	xfs_trans_log_inode(args.tp, cur->bc_private.b.ip, XFS_ILOG_CORE);
+	xfs_trans_mod_dquot_byino(args.tp, cur->bc_private.b.ip,
+			XFS_TRANS_DQ_BCOUNT, 1L);
+
+	new->l = cpu_to_be64(args.fsbno);
+
+	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+	*stat = 1;
+	return 0;
+
+ error0:
+	XFS_BTREE_TRACE_CURSOR(cur, XBT_ERROR);
+	return error;
+}
+
+STATIC int
+xfs_bmbt_free_block(
+	struct xfs_btree_cur	*cur,
+	struct xfs_buf		*bp)
+{
+	struct xfs_mount	*mp = cur->bc_mp;
+	struct xfs_inode	*ip = cur->bc_private.b.ip;
+	struct xfs_trans	*tp = cur->bc_tp;
+	xfs_fsblock_t		fsbno = XFS_DADDR_TO_FSB(mp, XFS_BUF_ADDR(bp));
+
+	xfs_bmap_add_free(fsbno, 1, cur->bc_private.b.flist, mp);
+	ip->i_d.di_nblocks--;
+
+	xfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
+	xfs_trans_mod_dquot_byino(tp, ip, XFS_TRANS_DQ_BCOUNT, -1L);
+	xfs_trans_binval(tp, bp);
+	return 0;
 }
 
 STATIC int
@@ -558,6 +708,148 @@ xfs_bmbt_key_diff(
 {
 	return (__int64_t)be64_to_cpu(key->bmbt.br_startoff) -
 				      cur->bc_rec.b.br_startoff;
+}
+
+static void
+xfs_bmbt_verify(
+	struct xfs_buf		*bp)
+{
+	struct xfs_mount	*mp = bp->b_target->bt_mount;
+	struct xfs_btree_block	*block = XFS_BUF_TO_BLOCK(bp);
+	unsigned int		level;
+	int			lblock_ok; /* block passes checks */
+
+	/* magic number and level verification.
+	 *
+	 * We don't know waht fork we belong to, so just verify that the level
+	 * is less than the maximum of the two. Later checks will be more
+	 * precise.
+	 */
+	level = be16_to_cpu(block->bb_level);
+	lblock_ok = block->bb_magic == cpu_to_be32(XFS_BMAP_MAGIC) &&
+		    level < max(mp->m_bm_maxlevels[0], mp->m_bm_maxlevels[1]);
+
+	/* numrecs verification */
+	lblock_ok = lblock_ok &&
+		be16_to_cpu(block->bb_numrecs) <= mp->m_bmap_dmxr[level != 0];
+
+	/* sibling pointer verification */
+	lblock_ok = lblock_ok &&
+		block->bb_u.l.bb_leftsib &&
+		(block->bb_u.l.bb_leftsib == cpu_to_be64(NULLDFSBNO) ||
+		 XFS_FSB_SANITY_CHECK(mp,
+			be64_to_cpu(block->bb_u.l.bb_leftsib))) &&
+		block->bb_u.l.bb_rightsib &&
+		(block->bb_u.l.bb_rightsib == cpu_to_be64(NULLDFSBNO) ||
+		 XFS_FSB_SANITY_CHECK(mp,
+			be64_to_cpu(block->bb_u.l.bb_rightsib)));
+
+	if (!lblock_ok) {
+		trace_xfs_btree_corrupt(bp, _RET_IP_);
+		XFS_CORRUPTION_ERROR(__func__, XFS_ERRLEVEL_LOW, mp, block);
+		xfs_buf_ioerror(bp, EFSCORRUPTED);
+	}
+}
+
+static void
+xfs_bmbt_read_verify(
+	struct xfs_buf	*bp)
+{
+	xfs_bmbt_verify(bp);
+}
+
+static void
+xfs_bmbt_write_verify(
+	struct xfs_buf	*bp)
+{
+	xfs_bmbt_verify(bp);
+}
+
+const struct xfs_buf_ops xfs_bmbt_buf_ops = {
+	.verify_read = xfs_bmbt_read_verify,
+	.verify_write = xfs_bmbt_write_verify,
+};
+
+
+#ifdef DEBUG
+STATIC int
+xfs_bmbt_keys_inorder(
+	struct xfs_btree_cur	*cur,
+	union xfs_btree_key	*k1,
+	union xfs_btree_key	*k2)
+{
+	return be64_to_cpu(k1->bmbt.br_startoff) <
+		be64_to_cpu(k2->bmbt.br_startoff);
+}
+
+STATIC int
+xfs_bmbt_recs_inorder(
+	struct xfs_btree_cur	*cur,
+	union xfs_btree_rec	*r1,
+	union xfs_btree_rec	*r2)
+{
+	return xfs_bmbt_disk_get_startoff(&r1->bmbt) +
+		xfs_bmbt_disk_get_blockcount(&r1->bmbt) <=
+		xfs_bmbt_disk_get_startoff(&r2->bmbt);
+}
+#endif	/* DEBUG */
+
+static const struct xfs_btree_ops xfs_bmbt_ops = {
+	.rec_len		= sizeof(xfs_bmbt_rec_t),
+	.key_len		= sizeof(xfs_bmbt_key_t),
+
+	.dup_cursor		= xfs_bmbt_dup_cursor,
+	.update_cursor		= xfs_bmbt_update_cursor,
+	.alloc_block		= xfs_bmbt_alloc_block,
+	.free_block		= xfs_bmbt_free_block,
+	.get_maxrecs		= xfs_bmbt_get_maxrecs,
+	.get_minrecs		= xfs_bmbt_get_minrecs,
+	.get_dmaxrecs		= xfs_bmbt_get_dmaxrecs,
+	.init_key_from_rec	= xfs_bmbt_init_key_from_rec,
+	.init_rec_from_key	= xfs_bmbt_init_rec_from_key,
+	.init_rec_from_cur	= xfs_bmbt_init_rec_from_cur,
+	.init_ptr_from_cur	= xfs_bmbt_init_ptr_from_cur,
+	.key_diff		= xfs_bmbt_key_diff,
+	.buf_ops		= &xfs_bmbt_buf_ops,
+#ifdef DEBUG
+	.keys_inorder		= xfs_bmbt_keys_inorder,
+	.recs_inorder		= xfs_bmbt_recs_inorder,
+#endif
+};
+
+/*
+ * Allocate a new bmap btree cursor.
+ */
+struct xfs_btree_cur *				/* new bmap btree cursor */
+xfs_bmbt_init_cursor(
+	struct xfs_mount	*mp,		/* file system mount point */
+	struct xfs_trans	*tp,		/* transaction pointer */
+	struct xfs_inode	*ip,		/* inode owning the btree */
+	int			whichfork)	/* data or attr fork */
+{
+	struct xfs_ifork	*ifp = XFS_IFORK_PTR(ip, whichfork);
+	struct xfs_btree_cur	*cur;
+
+	cur = kmem_zone_zalloc(xfs_btree_cur_zone, KM_SLEEP);
+
+	cur->bc_tp = tp;
+	cur->bc_mp = mp;
+	cur->bc_nlevels = be16_to_cpu(ifp->if_broot->bb_level) + 1;
+	cur->bc_btnum = XFS_BTNUM_BMAP;
+	cur->bc_blocklog = mp->m_sb.sb_blocklog;
+
+	cur->bc_ops = &xfs_bmbt_ops;
+	cur->bc_flags = XFS_BTREE_LONG_PTRS | XFS_BTREE_ROOT_IN_INODE;
+
+	cur->bc_private.b.forksize = XFS_IFORK_SIZE(ip, whichfork);
+	cur->bc_private.b.ip = ip;
+	cur->bc_private.b.firstblock = NULLFSBLOCK;
+	cur->bc_private.b.flist = NULL;
+	cur->bc_private.b.allocated = 0;
+	cur->bc_private.b.flags = 0;
+	cur->bc_private.b.whichfork = whichfork;
+
+	return cur;
 }
 
 /*
