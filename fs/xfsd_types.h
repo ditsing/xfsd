@@ -87,7 +87,7 @@ typedef __TSLIB_(__uint64_t) __TSLIB_(__psunsigned_t);
 #error BITS_PER_LONG must be 32 or 64
 #endif
 
-// Copied from linux/swab.h
+// Copied from uapi/linux/swab.h
 #define REVERSE_BITS16( x)((__u16)( 					\
 		(((__u16)(x) & ( __u16)0x00ffU) << 8) | 		\
 		(((__u16)(x) & ( __u16)0xff00U) >> 8)))
@@ -115,6 +115,9 @@ typedef __TSLIB_(__uint64_t) __TSLIB_(__psunsigned_t);
 #define le16_to_cpu( x) x
 #define le32_to_cpu( x) x
 #define le64_to_cpu( x) x
+#define cpu_to_le16( x) x
+#define cpu_to_le32( x) x
+#define cpu_to_le64( x) x
 
 // Fake rb_node struct. We may not need this.
 // No, we don't.
@@ -401,6 +404,7 @@ typedef u64 __TSLIB_(blkcnt_t);
 struct __TSLIB_(super_block)
 {
 	u64 s_maxbytes;
+	struct { int frozen; } s_writers;
 };
 
 #endif

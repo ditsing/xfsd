@@ -8,13 +8,21 @@ int seek_file( long offset, int whence);
 int seek_file_set( long offset);
 int seek_file_cur( long offset);
 int seek_file_end( long offset);
+void *mem_set( void *s, int c, long n);
 void *mem_cpy( void *dst, const void *src, int n);
 void *mem_move( void *dst, const void *src, int n);
 long str_len( const char *str);
 int str_ncmp( const char *s1, const char *s2, long n);
 int read_file_length( void *ptr, long offset, int size, int nmemb);
 
+void *mem_alloc( size_t size);
+void *mem_zalloc( size_t size);
+void mem_free( const void *p);
+
 #ifndef __IN_TSLIB__
+
+#define malloc mem_alloc
+#define free mem_free
 
 #define memcpy mem_cpy
 #define memmove mem_move

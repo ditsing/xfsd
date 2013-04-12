@@ -9,7 +9,7 @@ OBJS = read_super.o		\
        xfsd_bmap_btree.o	\
        xfsd_dir2_node.o		\
        xfsd_dir2_leaf.o		\
-       xfsd_da_tree.o		\
+       xfsd_da_btree.o		\
        xfsd_dir2.o 		\
        xfsd_dir2_block.o 	\
        xfsd_dir2_data.o 	\
@@ -27,7 +27,8 @@ OBJS = read_super.o		\
        xfsd_ialloc.o 		\
        xfsd_alloc_btree.o 	\
        xfsd_ialloc_btree.o 	\
-       xfsd_da_btree.o
+       xfsd_mount.o 		\
+       xfsd_mem.o
 	
 
 hello: hello.c $(OBJS)

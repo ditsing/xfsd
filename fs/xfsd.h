@@ -20,14 +20,6 @@
 #define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
 
 /*
- * Copied from xfs/kmem.h
- */
-#define KM_SLEEP	0x0001u
-#define KM_NOSLEEP	0x0002u
-#define KM_NOFS		0x0004u
-#define KM_MAYFAIL	0x0008u
-
-/*
  * Copied from linux/fs.h
  * File types
  *
@@ -45,6 +37,10 @@
 #define DT_WHT		14
 
 #define ASSERT(x)
+#define __bitwise
+#define __force
+#define BUG_ON(x)
+
 
 #define XFS_BIT_BLKNOS 	1
 #define XFS_BIT_INUMS  	1
@@ -60,6 +56,7 @@
 #include "linux/inode.h"
 #include "radix-tree.h"
 
+#include "xfsd_mem.h"
 #include "xfsd_buf.h"
 #include "xfsd_globals.h"
 #include "xfsd_stats.h"
@@ -115,24 +112,13 @@ void sort(void *base, size_t num, size_t size,
  */
 #define ULONG_MAX (~0UL)
 
-/*
- * From shed.h
- */
-#define PF_FSTRANS	0x00020000	/* inside a filesystem transaction */
-
+#define PAGE_CACHE_SHIFT 13
 
 /*
  * Need to be updated
  */
-#define kmem_alloc(x, y) ( ( void *)0)
-#define kmem_zalloc(x, y) ( ( void *)0)
-#define kmem_zalloc_large(x) ( ( void *)0)
-#define kmem_realloc(x, y, u, v) ( ( void *)0)
-#define kmem_free(x) ( 0)
-#define kmem_free_large(x) ( 0)
-#define kmem_zone_alloc(x, y) ( ( void *)0)
-#define kmem_zone_zalloc(x, y) ( ( void *)0)
-#define kmem_zone_free(x, y) ( 0)
 #define TASK_UNINTERRUPTIBLE 2
+#define printk_once( a, b)
+#define DEFINE_MUTEX(x) int x;
 #endif
 

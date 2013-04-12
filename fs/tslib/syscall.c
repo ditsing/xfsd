@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "tslib.h"
 #include "syscall.h"
@@ -95,4 +96,19 @@ int eprint( const char *format, ...)
 	va_end( arg);
 
 	return ret;
+}
+
+void *mem_alloc( size_t size)
+{
+	return malloc( size);
+}
+
+void *mem_zalloc( size_t size)
+{
+	return calloc( 1, size);
+}
+
+void mem_free( const void *p)
+{
+	return free( ( void *) p);
 }
