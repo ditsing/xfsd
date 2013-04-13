@@ -120,7 +120,7 @@ void sort(void *base, size_t num, size_t size,
 #define TASK_UNINTERRUPTIBLE 2
 #define printk_once( a, b)
 #define DEFINE_MUTEX(x) int x;
-#define xfs_do_force_shutdown( mp, flags, fname, lnnum)
-
+static inline void xfs_do_force_shutdown(struct xfs_mount *mp, int flags, char *fname,
+		int lnnum) {}
 #endif
 
