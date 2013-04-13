@@ -28,7 +28,9 @@ OBJS = read_super.o		\
        xfsd_alloc_btree.o 	\
        xfsd_ialloc_btree.o 	\
        xfsd_mount.o 		\
-       xfsd_mem.o
+       xfsd_mem.o 		\
+       xfsd_super.o 		\
+       process.o
 	
 
 hello: hello.c $(OBJS)

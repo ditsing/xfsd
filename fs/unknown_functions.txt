@@ -5,9 +5,7 @@ current_restore_flags_nested
 current_set_flags_nested
 delay
 filemap_write_and_wait
-fls_long
 i_size_read
-is_vmalloc_addr
 mraccess_nested
 mrdemote
 mrtryaccess
@@ -39,7 +37,6 @@ xfs_buf_stale
 xfs_buf_unlock
 xfs_bump_ino_vers2
 xfs_bwrite
-xfs_do_force_shutdown
 xfs_extent_busy_insert
 xfs_extent_busy_reuse
 xfs_extent_busy_trim

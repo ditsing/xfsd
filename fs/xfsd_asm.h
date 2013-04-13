@@ -11,6 +11,9 @@
 #define atomic_set(v,i)		((v)->counter = (i))
 #define atomic64_set(v,i)	((v)->counter = (i))
 
+#define atomic_dec_return(x) 	(--((x)->counter))
+#define atomic_inc_return(x) 	(++((x)->counter))
+
 static inline __u16 get_unaligned_be16( const void *p)
 {
 	__be16 ret;
