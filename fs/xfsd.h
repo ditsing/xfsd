@@ -40,6 +40,7 @@
 #define __bitwise
 #define __force
 #define BUG_ON(x)
+#define WARN_ON(x)
 
 
 #define XFS_BIT_BLKNOS 	1
