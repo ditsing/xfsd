@@ -66,6 +66,15 @@ typedef __u32	__TSLIB_(__uint32_t);
 typedef __s64 	__TSLIB_(__int64_t);
 typedef __u64	__TSLIB_(__uint64_t);
 
+typedef __s8	__TSLIB_(int8_t);
+typedef __u8	__TSLIB_(uint8_t);
+typedef __s16	__TSLIB_(int16_t);
+typedef __u16	__TSLIB_(uint16_t);
+typedef __s32 	__TSLIB_(int32_t);
+typedef __u32	__TSLIB_(uint32_t);
+typedef __s64 	__TSLIB_(int64_t);
+typedef __u64	__TSLIB_(uint64_t);
+
 typedef __TSLIB_(__uint32_t)		__TSLIB_(prid_t);		/* project ID */
 typedef __TSLIB_(__uint32_t)		__TSLIB_(inst_t);		/* an instruction */
 
@@ -394,8 +403,14 @@ typedef struct __TSLIB_(timespec) {
  * For inode.h
  */
 FAKE_STRUCT(address_space);
-FAKE_STRUCT(hlist_node);
-FAKE_STRUCT(hlist_head);
+struct __TSLIB_(hlist_head) {
+	struct __TSLIB_(hlist_node) *first;
+};
+
+struct __TSLIB_(hlist_node) {
+	struct __TSLIB_(hlist_node) *next, **pprev;
+};
+
 typedef __TSLIB_(gid_t) __TSLIB_(kgid_t);
 typedef __TSLIB_(uid_t) __TSLIB_(kuid_t);
 // From linxu/types.h

@@ -118,7 +118,7 @@ static inline __u8 ror8(__u8 word, unsigned int shift)
 	return (word >> shift) | (word << (8 - shift));
 }
 
-static inline fls64( __u64 x)
+static inline int fls64( __u64 x)
 {
 	int ret = 0;
 	if ( x)
@@ -133,7 +133,7 @@ static inline fls64( __u64 x)
 	return ret;
 }
 
-static inline fls_long( __u32 x)
+static inline int fls_long( __u32 x)
 {
 	return fls64( x);
 }
