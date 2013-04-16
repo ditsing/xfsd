@@ -7,7 +7,6 @@ mrunlock_excl
 mrunlock_shared
 mrupdate_nested
 mutex_init
-put_unaligned
 radix_tree_preload
 radix_tree_preload_end
 rcu_read_lock

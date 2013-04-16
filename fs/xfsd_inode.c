@@ -1386,66 +1386,6 @@ xfs_idestroy_fork(
 }
 
 /*
- * xfs_iextents_copy()
- *
- * This is called to copy the REAL extents (as opposed to the delayed
- * allocation extents) from the inode into the given buffer.  It
- * returns the number of bytes copied into the buffer.
- *
- * If there are no delayed allocation extents, then we can just
- * memcpy() the extents into the buffer.  Otherwise, we need to
- * examine each extent in turn and skip those which are delayed.
- */
-int
-xfs_iextents_copy(
-	xfs_inode_t		*ip,
-	xfs_bmbt_rec_t		*dp,
-	int			whichfork)
-{
-	int			copied;
-	int			i;
-	xfs_ifork_t		*ifp;
-	int			nrecs;
-	xfs_fsblock_t		start_block;
-
-	ifp = XFS_IFORK_PTR(ip, whichfork);
-	ASSERT(xfs_isilocked(ip, XFS_ILOCK_EXCL|XFS_ILOCK_SHARED));
-	ASSERT(ifp->if_bytes > 0);
-
-	nrecs = ifp->if_bytes / (uint)sizeof(xfs_bmbt_rec_t);
-	XFS_BMAP_TRACE_EXLIST(ip, nrecs, whichfork);
-	ASSERT(nrecs > 0);
-
-	/*
-	 * There are some delayed allocation extents in the
-	 * inode, so copy the extents one at a time and skip
-	 * the delayed ones.  There must be at least one
-	 * non-delayed extent.
-	 */
-	copied = 0;
-	for (i = 0; i < nrecs; i++) {
-		xfs_bmbt_rec_host_t *ep = xfs_iext_get_ext(ifp, i);
-		start_block = xfs_bmbt_get_startblock(ep);
-		if (isnullstartblock(start_block)) {
-			/*
-			 * It's a delayed allocation extent, so skip it.
-			 */
-			continue;
-		}
-
-		/* Translate to on disk format */
-		put_unaligned(cpu_to_be64(ep->l0), &dp->l0);
-		put_unaligned(cpu_to_be64(ep->l1), &dp->l1);
-		dp++;
-		copied++;
-	}
-	ASSERT(copied != 0);
-	xfs_validate_extents(ifp, copied, XFS_EXTFMT_INODE(ip));
-
-	return (copied * (uint)sizeof(xfs_bmbt_rec_t));
-}
-
-/*
  * Return a pointer to the extent record at file index idx.
  */
 xfs_bmbt_rec_host_t *
