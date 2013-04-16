@@ -254,56 +254,6 @@ xfs_attr_shortform_bytesfit(xfs_inode_t *dp, int bytes)
 }
 
 /*
- * Create the initial contents of a shortform attribute list.
- */
-void
-xfs_attr_shortform_create(xfs_da_args_t *args)
-{
-	xfs_attr_sf_hdr_t *hdr;
-	xfs_inode_t *dp;
-	xfs_ifork_t *ifp;
-
-	trace_xfs_attr_sf_create(args);
-
-	dp = args->dp;
-	ASSERT(dp != NULL);
-	ifp = dp->i_afp;
-	ASSERT(ifp != NULL);
-	ASSERT(ifp->if_bytes == 0);
-	if (dp->i_d.di_aformat == XFS_DINODE_FMT_EXTENTS) {
-		ifp->if_flags &= ~XFS_IFEXTENTS;	/* just in case */
-		dp->i_d.di_aformat = XFS_DINODE_FMT_LOCAL;
-		ifp->if_flags |= XFS_IFINLINE;
-	} else {
-		ASSERT(ifp->if_flags & XFS_IFINLINE);
-	}
-	xfs_idata_realloc(dp, sizeof(*hdr), XFS_ATTR_FORK);
-	hdr = (xfs_attr_sf_hdr_t *)ifp->if_u1.if_data;
-	hdr->count = 0;
-	hdr->totsize = cpu_to_be16(sizeof(*hdr));
-	xfs_trans_log_inode(args->trans, dp, XFS_ILOG_CORE | XFS_ILOG_ADATA);
-}
-
-/*
- * After the last attribute is removed revert to original inode format,
- * making all literal area available to the data fork once more.
- */
-STATIC void
-xfs_attr_fork_reset(
-	struct xfs_inode	*ip,
-	struct xfs_trans	*tp)
-{
-	xfs_idestroy_fork(ip, XFS_ATTR_FORK);
-	ip->i_d.di_forkoff = 0;
-	ip->i_d.di_aformat = XFS_DINODE_FMT_EXTENTS;
-
-	ASSERT(ip->i_d.di_anextents == 0);
-	ASSERT(ip->i_afp == NULL);
-
-	xfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
-}
-
-/*
  * Look up a name in a shortform attribute list structure.
  */
 /*ARGSUSED*/

@@ -42,6 +42,7 @@
 #define BUG_ON(x)
 #define WARN_ON(x)
 
+#define i_size_read(x) ((x)->i_size)
 
 #define XFS_BIT_BLKNOS 	1
 #define XFS_BIT_INUMS  	1

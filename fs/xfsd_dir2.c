@@ -166,27 +166,6 @@ xfs_dir_ino_validate(
 }
 
 /*
- * Initialize a directory with its "." and ".." entries.
- */
-int
-xfs_dir_init(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
-	xfs_inode_t	*pdp)
-{
-	xfs_da_args_t	args;
-	int		error;
-
-	memset((char *)&args, 0, sizeof(args));
-	args.dp = dp;
-	args.trans = tp;
-	ASSERT(S_ISDIR(dp->i_d.di_mode));
-	if ((error = xfs_dir_ino_validate(tp->t_mountp, pdp->i_ino)))
-		return error;
-	return xfs_dir2_sf_create(&args, pdp->i_ino);
-}
-
-/*
  * If doing a CI lookup and case-insensitive match, dup actual name into
  * args.value. Return EEXIST for success (ie. name found) or an error.
  */

@@ -504,25 +504,6 @@ xfs_bmbt_update_cursor(
 }
 
 STATIC int
-xfs_bmbt_free_block(
-	struct xfs_btree_cur	*cur,
-	struct xfs_buf		*bp)
-{
-	struct xfs_mount	*mp = cur->bc_mp;
-	struct xfs_inode	*ip = cur->bc_private.b.ip;
-	struct xfs_trans	*tp = cur->bc_tp;
-	xfs_fsblock_t		fsbno = XFS_DADDR_TO_FSB(mp, XFS_BUF_ADDR(bp));
-
-	xfs_bmap_add_free(fsbno, 1, cur->bc_private.b.flist, mp);
-	ip->i_d.di_nblocks--;
-
-	xfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
-	xfs_trans_mod_dquot_byino(tp, ip, XFS_TRANS_DQ_BCOUNT, -1L);
-	xfs_trans_binval(tp, bp);
-	return 0;
-}
-
-STATIC int
 xfs_bmbt_get_minrecs(
 	struct xfs_btree_cur	*cur,
 	int			level)
@@ -714,7 +695,6 @@ static const struct xfs_btree_ops xfs_bmbt_ops = {
 
 	.dup_cursor		= xfs_bmbt_dup_cursor,
 	.update_cursor		= xfs_bmbt_update_cursor,
-	.free_block		= xfs_bmbt_free_block,
 	.get_maxrecs		= xfs_bmbt_get_maxrecs,
 	.get_minrecs		= xfs_bmbt_get_minrecs,
 	.get_dmaxrecs		= xfs_bmbt_get_dmaxrecs,
