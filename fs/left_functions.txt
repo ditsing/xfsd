@@ -1,11 +1,4 @@
 call_rcu
-mraccess_nested
-mrdemote
-mrtryaccess
-mrtryupdate
-mrunlock_excl
-mrunlock_shared
-mrupdate_nested
 mutex_init
 radix_tree_preload
 radix_tree_preload_end

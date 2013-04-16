@@ -231,19 +231,6 @@ typedef __u64 			__TSLIB_(u_int64_t);
 typedef __s64 			__TSLIB_(int64_t);
 
 /*
- * Fake mrlock_t, it should be a rwsem-spinlock. used in xfs_inode.h
- */
-
-FAKE_STRUCT_TYPE(mrlock);
-
-/*
- * Fake struct inode, used in xfs_inode.h
- */
-/*
-FAKE_STRUCT(inode);
-*/
-
-/*
  * Fake container_of, used in xfs_inode.h
  */
 #define container_of( ptr, type, member) 0
@@ -262,11 +249,6 @@ typedef unsigned short 		__TSLIB_(umode_t);
  * Copied from linux/stddef.h
  */
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-
-/*
- * Copied from xfs/xfs_buf.h, used in xfs_mount.h.
-FAKE_STRUCT_TYPE( xfs_buftarg);
- */
 
 /*
  * Copied from linux/workqueue.h, used in xfs_mount.h.
@@ -421,5 +403,4 @@ struct __TSLIB_(super_block)
 	u64 s_maxbytes;
 	struct { int frozen; } s_writers;
 };
-
 #endif

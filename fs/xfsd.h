@@ -63,6 +63,7 @@
 #include "xfsd_globals.h"
 #include "xfsd_stats.h"
 #include "xfsd_message.h"
+#include "xfsd_mrlock.h"
 
 #define __return_address (0)
 #define __releases(x)
