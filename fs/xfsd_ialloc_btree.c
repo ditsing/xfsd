@@ -54,78 +54,6 @@ xfs_inobt_dup_cursor(
 			cur->bc_private.a.agbp, cur->bc_private.a.agno);
 }
 
-STATIC void
-xfs_inobt_set_root(
-	struct xfs_btree_cur	*cur,
-	union xfs_btree_ptr	*nptr,
-	int			inc)	/* level change */
-{
-	struct xfs_buf		*agbp = cur->bc_private.a.agbp;
-	struct xfs_agi		*agi = XFS_BUF_TO_AGI(agbp);
-
-	agi->agi_root = nptr->s;
-	be32_add_cpu(&agi->agi_level, inc);
-	xfs_ialloc_log_agi(cur->bc_tp, agbp, XFS_AGI_ROOT | XFS_AGI_LEVEL);
-}
-
-STATIC int
-xfs_inobt_alloc_block(
-	struct xfs_btree_cur	*cur,
-	union xfs_btree_ptr	*start,
-	union xfs_btree_ptr	*new,
-	int			length,
-	int			*stat)
-{
-	xfs_alloc_arg_t		args;		/* block allocation args */
-	int			error;		/* error return value */
-	xfs_agblock_t		sbno = be32_to_cpu(start->s);
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ENTRY);
-
-	memset(&args, 0, sizeof(args));
-	args.tp = cur->bc_tp;
-	args.mp = cur->bc_mp;
-	args.fsbno = XFS_AGB_TO_FSB(args.mp, cur->bc_private.a.agno, sbno);
-	args.minlen = 1;
-	args.maxlen = 1;
-	args.prod = 1;
-	args.type = XFS_ALLOCTYPE_NEAR_BNO;
-
-	error = xfs_alloc_vextent(&args);
-	if (error) {
-		XFS_BTREE_TRACE_CURSOR(cur, XBT_ERROR);
-		return error;
-	}
-	if (args.fsbno == NULLFSBLOCK) {
-		XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
-		*stat = 0;
-		return 0;
-	}
-	ASSERT(args.len == 1);
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
-
-	new->s = cpu_to_be32(XFS_FSB_TO_AGBNO(args.mp, args.fsbno));
-	*stat = 1;
-	return 0;
-}
-
-STATIC int
-xfs_inobt_free_block(
-	struct xfs_btree_cur	*cur,
-	struct xfs_buf		*bp)
-{
-	xfs_fsblock_t		fsbno;
-	int			error;
-
-	fsbno = XFS_DADDR_TO_FSB(cur->bc_mp, XFS_BUF_ADDR(bp));
-	error = xfs_free_extent(cur->bc_tp, fsbno, 1);
-	if (error)
-		return error;
-
-	xfs_trans_binval(cur->bc_tp, bp);
-	return error;
-}
-
 STATIC int
 xfs_inobt_get_maxrecs(
 	struct xfs_btree_cur	*cur,
@@ -264,9 +192,6 @@ static const struct xfs_btree_ops xfs_inobt_ops = {
 	.key_len		= sizeof(xfs_inobt_key_t),
 
 	.dup_cursor		= xfs_inobt_dup_cursor,
-	.set_root		= xfs_inobt_set_root,
-	.alloc_block		= xfs_inobt_alloc_block,
-	.free_block		= xfs_inobt_free_block,
 	.get_minrecs		= xfs_inobt_get_minrecs,
 	.get_maxrecs		= xfs_inobt_get_maxrecs,
 	.init_key_from_rec	= xfs_inobt_init_key_from_rec,

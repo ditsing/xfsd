@@ -54,11 +54,6 @@
  *========================================================================*/
 
 /*
- * Internal routines when attribute list fits inside the inode.
- */
-STATIC int xfs_attr_shortform_addname(xfs_da_args_t *args);
-
-/*
  * Internal routines when attribute list is one block.
  */
 STATIC int xfs_attr_leaf_get(xfs_da_args_t *args);
@@ -228,78 +223,6 @@ xfs_attr_calc_size(
 	return nblks;
 }
 
-STATIC int
-xfs_attr_set_int(
-	struct xfs_inode *dp,
-	struct xfs_name	*name,
-	unsigned char	*value,
-	int		valuelen,
-	int		flags)
-{
-	// Deleted.
-}
-
-int
-xfs_attr_set(
-	xfs_inode_t	*dp,
-	const unsigned char *name,
-	unsigned char	*value,
-	int		valuelen,
-	int		flags)
-{
-	int             error;
-	struct xfs_name	xname;
-
-	XFS_STATS_INC(xs_attr_set);
-
-	if (XFS_FORCED_SHUTDOWN(dp->i_mount))
-		return (EIO);
-
-	error = xfs_attr_name_to_xname(&xname, name);
-	if (error)
-		return error;
-
-	return xfs_attr_set_int(dp, &xname, value, valuelen, flags);
-}
-
-/*
- * Generic handler routine to remove a name from an attribute list.
- * Transitions attribute list from Btree to shortform as necessary.
- */
-STATIC int
-xfs_attr_remove_int(xfs_inode_t *dp, struct xfs_name *name, int flags)
-{
-	// Deleted.
-}
-
-int
-xfs_attr_remove(
-	xfs_inode_t	*dp,
-	const unsigned char *name,
-	int		flags)
-{
-	int		error;
-	struct xfs_name	xname;
-
-	XFS_STATS_INC(xs_attr_remove);
-
-	if (XFS_FORCED_SHUTDOWN(dp->i_mount))
-		return (EIO);
-
-	error = xfs_attr_name_to_xname(&xname, name);
-	if (error)
-		return error;
-
-	xfs_ilock(dp, XFS_ILOCK_SHARED);
-	if (!xfs_inode_hasattr(dp)) {
-		xfs_iunlock(dp, XFS_ILOCK_SHARED);
-		return XFS_ERROR(ENOATTR);
-	}
-	xfs_iunlock(dp, XFS_ILOCK_SHARED);
-
-	return xfs_attr_remove_int(dp, &xname, flags);
-}
-
 int
 xfs_attr_list_int(xfs_attr_list_context_t *context)
 {
@@ -451,82 +374,13 @@ xfs_attr_list(
 	return error;
 }
 
-int								/* error */
-xfs_attr_inactive(xfs_inode_t *dp)
-{
-	// Deleted.
-}
-
-
-
 /*========================================================================
  * External routines when attribute list is inside the inode
  *========================================================================*/
 
-/*
- * Add a name to the shortform attribute list structure
- * This is the external routine.
- */
-STATIC int
-xfs_attr_shortform_addname(xfs_da_args_t *args)
-{
-	int newsize, forkoff, retval;
-
-	trace_xfs_attr_sf_addname(args);
-
-	retval = xfs_attr_shortform_lookup(args);
-	if ((args->flags & ATTR_REPLACE) && (retval == ENOATTR)) {
-		return(retval);
-	} else if (retval == EEXIST) {
-		if (args->flags & ATTR_CREATE)
-			return(retval);
-		retval = xfs_attr_shortform_remove(args);
-		ASSERT(retval == 0);
-	}
-
-	if (args->namelen >= XFS_ATTR_SF_ENTSIZE_MAX ||
-	    args->valuelen >= XFS_ATTR_SF_ENTSIZE_MAX)
-		return(XFS_ERROR(ENOSPC));
-
-	newsize = XFS_ATTR_SF_TOTSIZE(args->dp);
-	newsize += XFS_ATTR_SF_ENTSIZE_BYNAME(args->namelen, args->valuelen);
-
-	forkoff = xfs_attr_shortform_bytesfit(args->dp, newsize);
-	if (!forkoff)
-		return(XFS_ERROR(ENOSPC));
-
-	xfs_attr_shortform_add(args, forkoff);
-	return(0);
-}
-
-
 /*========================================================================
  * External routines when attribute list is one block
  *========================================================================*/
-
-/*
- * Add a name to the leaf attribute list structure
- *
- * This leaf block cannot have a "remote" value, we only call this routine
- * if bmap_one_block() says there is only one block (ie: no remote blks).
- */
-STATIC int
-xfs_attr_leaf_addname(xfs_da_args_t *args)
-{
-	// Deleted.
-}
-
-/*
- * Remove a name from the leaf attribute list structure
- *
- * This leaf block cannot have a "remote" value, we only call this routine
- * if bmap_one_block() says there is only one block (ie: no remote blks).
- */
-STATIC int
-xfs_attr_leaf_removename(xfs_da_args_t *args)
-{
-	// Deleted.
-}
 
 /*
  * Look up a name in a leaf attribute list structure.
@@ -585,35 +439,6 @@ xfs_attr_leaf_list(xfs_attr_list_context_t *context)
 /*========================================================================
  * External routines when attribute list size > XFS_LBSIZE(mp).
  *========================================================================*/
-
-/*
- * Add a name to a Btree-format attribute list.
- *
- * This will involve walking down the Btree, and may involve splitting
- * leaf nodes and even splitting intermediate nodes up to and including
- * the root node (a special case of an intermediate node).
- *
- * "Remote" attribute values confuse the issue and atomic rename operations
- * add a whole extra layer of confusion on top of that.
- */
-STATIC int
-xfs_attr_node_addname(xfs_da_args_t *args)
-{
-	// Deleted.
-}
-
-/*
- * Remove a name from a B-tree attribute list.
- *
- * This will involve walking down the Btree, and may involve joining
- * leaf nodes and even joining intermediate nodes up to and including
- * the root node (a special case of an intermediate node).
- */
-STATIC int
-xfs_attr_node_removename(xfs_da_args_t *args)
-{
-	// Deleted.
-}
 
 /*
  * Fill in the disk block numbers in the state structure for the buffers
@@ -962,22 +787,3 @@ xfs_attr_rmtval_get(xfs_da_args_t *args)
 	return(0);
 }
 
-/*
- * Write the value associated with an attribute into the out-of-line buffer
- * that we have defined for it.
- */
-STATIC int
-xfs_attr_rmtval_set(xfs_da_args_t *args)
-{
-	// Deleted.
-}
-
-/*
- * Remove the value associated with an attribute by deleting the
- * out-of-line buffer that it is stored on.
- */
-STATIC int
-xfs_attr_rmtval_remove(xfs_da_args_t *args)
-{
-	// Deleted.
-}

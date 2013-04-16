@@ -699,21 +699,6 @@ release_buf:
 	return error;
 }
 
-
-/*
- * xfs_mod_sb() can be used to copy arbitrary changes to the
- * in-core superblock into the superblock buffer to be logged.
- * It does not provide the higher level of locking that is
- * needed to protect the in-core superblock from concurrent
- * access.
- */
-void
-xfs_mod_sb(xfs_trans_t *tp, __int64_t fields)
-{
-	// Deleted.
-}
-
-
 /*
  * xfs_mod_incore_sb_unlocked() is a utility routine common used to apply
  * a delta to a specified field in the in-core superblock.  Simply

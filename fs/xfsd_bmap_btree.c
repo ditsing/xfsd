@@ -504,92 +504,6 @@ xfs_bmbt_update_cursor(
 }
 
 STATIC int
-xfs_bmbt_alloc_block(
-	struct xfs_btree_cur	*cur,
-	union xfs_btree_ptr	*start,
-	union xfs_btree_ptr	*new,
-	int			length,
-	int			*stat)
-{
-	xfs_alloc_arg_t		args;		/* block allocation args */
-	int			error;		/* error return value */
-
-	memset(&args, 0, sizeof(args));
-	args.tp = cur->bc_tp;
-	args.mp = cur->bc_mp;
-	args.fsbno = cur->bc_private.b.firstblock;
-	args.firstblock = args.fsbno;
-
-	if (args.fsbno == NULLFSBLOCK) {
-		args.fsbno = be64_to_cpu(start->l);
-		args.type = XFS_ALLOCTYPE_START_BNO;
-		/*
-		 * Make sure there is sufficient room left in the AG to
-		 * complete a full tree split for an extent insert.  If
-		 * we are converting the middle part of an extent then
-		 * we may need space for two tree splits.
-		 *
-		 * We are relying on the caller to make the correct block
-		 * reservation for this operation to succeed.  If the
-		 * reservation amount is insufficient then we may fail a
-		 * block allocation here and corrupt the filesystem.
-		 */
-		args.minleft = xfs_trans_get_block_res(args.tp);
-	} else if (cur->bc_private.b.flist->xbf_low) {
-		args.type = XFS_ALLOCTYPE_START_BNO;
-	} else {
-		args.type = XFS_ALLOCTYPE_NEAR_BNO;
-	}
-
-	args.minlen = args.maxlen = args.prod = 1;
-	args.wasdel = cur->bc_private.b.flags & XFS_BTCUR_BPRV_WASDEL;
-	if (!args.wasdel && xfs_trans_get_block_res(args.tp) == 0) {
-		error = XFS_ERROR(ENOSPC);
-		goto error0;
-	}
-	error = xfs_alloc_vextent(&args);
-	if (error)
-		goto error0;
-
-	if (args.fsbno == NULLFSBLOCK && args.minleft) {
-		/*
-		 * Could not find an AG with enough free space to satisfy
-		 * a full btree split.  Try again without minleft and if
-		 * successful activate the lowspace algorithm.
-		 */
-		args.fsbno = 0;
-		args.type = XFS_ALLOCTYPE_FIRST_AG;
-		args.minleft = 0;
-		error = xfs_alloc_vextent(&args);
-		if (error)
-			goto error0;
-		cur->bc_private.b.flist->xbf_low = 1;
-	}
-	if (args.fsbno == NULLFSBLOCK) {
-		XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
-		*stat = 0;
-		return 0;
-	}
-	ASSERT(args.len == 1);
-	cur->bc_private.b.firstblock = args.fsbno;
-	cur->bc_private.b.allocated++;
-	cur->bc_private.b.ip->i_d.di_nblocks++;
-	xfs_trans_log_inode(args.tp, cur->bc_private.b.ip, XFS_ILOG_CORE);
-	xfs_trans_mod_dquot_byino(args.tp, cur->bc_private.b.ip,
-			XFS_TRANS_DQ_BCOUNT, 1L);
-
-	new->l = cpu_to_be64(args.fsbno);
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
-	*stat = 1;
-	return 0;
-
- error0:
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ERROR);
-	return error;
-}
-
-STATIC int
 xfs_bmbt_free_block(
 	struct xfs_btree_cur	*cur,
 	struct xfs_buf		*bp)
@@ -800,7 +714,6 @@ static const struct xfs_btree_ops xfs_bmbt_ops = {
 
 	.dup_cursor		= xfs_bmbt_dup_cursor,
 	.update_cursor		= xfs_bmbt_update_cursor,
-	.alloc_block		= xfs_bmbt_alloc_block,
 	.free_block		= xfs_bmbt_free_block,
 	.get_maxrecs		= xfs_bmbt_get_maxrecs,
 	.get_minrecs		= xfs_bmbt_get_minrecs,
