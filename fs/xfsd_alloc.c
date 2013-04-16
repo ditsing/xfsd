@@ -2045,28 +2045,7 @@ xfs_alloc_log_agf(
 	xfs_buf_t	*bp,	/* buffer for a.g. freelist header */
 	int		fields)	/* mask of fields to be logged (XFS_AGF_...) */
 {
-	int	first;		/* first byte offset */
-	int	last;		/* last byte offset */
-	static const short	offsets[] = {
-		offsetof(xfs_agf_t, agf_magicnum),
-		offsetof(xfs_agf_t, agf_versionnum),
-		offsetof(xfs_agf_t, agf_seqno),
-		offsetof(xfs_agf_t, agf_length),
-		offsetof(xfs_agf_t, agf_roots[0]),
-		offsetof(xfs_agf_t, agf_levels[0]),
-		offsetof(xfs_agf_t, agf_flfirst),
-		offsetof(xfs_agf_t, agf_fllast),
-		offsetof(xfs_agf_t, agf_flcount),
-		offsetof(xfs_agf_t, agf_freeblks),
-		offsetof(xfs_agf_t, agf_longest),
-		offsetof(xfs_agf_t, agf_btreeblks),
-		sizeof(xfs_agf_t)
-	};
-
-	trace_xfs_agf(tp->t_mountp, XFS_BUF_TO_AGF(bp), fields, _RET_IP_);
-
-	xfs_btree_offsets(fields, offsets, XFS_AGF_NUM_BITS, &first, &last);
-	xfs_trans_log_buf(tp, bp, (uint)first, (uint)last);
+	// Deleted.
 }
 
 /*
@@ -2100,49 +2079,7 @@ xfs_alloc_put_freelist(
 	xfs_agblock_t		bno,	/* block being freed */
 	int			btreeblk) /* block came from a AGF btree */
 {
-	xfs_agf_t		*agf;	/* a.g. freespace structure */
-	xfs_agfl_t		*agfl;	/* a.g. free block array */
-	__be32			*blockp;/* pointer to array entry */
-	int			error;
-	int			logflags;
-	xfs_mount_t		*mp;	/* mount structure */
-	xfs_perag_t		*pag;	/* per allocation group data */
-
-	agf = XFS_BUF_TO_AGF(agbp);
-	mp = tp->t_mountp;
-
-	if (!agflbp && (error = xfs_alloc_read_agfl(mp, tp,
-			be32_to_cpu(agf->agf_seqno), &agflbp)))
-		return error;
-	agfl = XFS_BUF_TO_AGFL(agflbp);
-	be32_add_cpu(&agf->agf_fllast, 1);
-	if (be32_to_cpu(agf->agf_fllast) == XFS_AGFL_SIZE(mp))
-		agf->agf_fllast = 0;
-
-	pag = xfs_perag_get(mp, be32_to_cpu(agf->agf_seqno));
-	be32_add_cpu(&agf->agf_flcount, 1);
-	xfs_trans_agflist_delta(tp, 1);
-	pag->pagf_flcount++;
-
-	logflags = XFS_AGF_FLLAST | XFS_AGF_FLCOUNT;
-	if (btreeblk) {
-		be32_add_cpu(&agf->agf_btreeblks, -1);
-		pag->pagf_btreeblks--;
-		logflags |= XFS_AGF_BTREEBLKS;
-	}
-	xfs_perag_put(pag);
-
-	xfs_alloc_log_agf(tp, agbp, logflags);
-
-	ASSERT(be32_to_cpu(agf->agf_flcount) <= XFS_AGFL_SIZE(mp));
-	blockp = &agfl->agfl_bno[be32_to_cpu(agf->agf_fllast)];
-	*blockp = cpu_to_be32(bno);
-	xfs_alloc_log_agf(tp, agbp, logflags);
-	xfs_trans_log_buf(tp, agflbp,
-		(int)((xfs_caddr_t)blockp - (xfs_caddr_t)agfl),
-		(int)((xfs_caddr_t)blockp - (xfs_caddr_t)agfl +
-			sizeof(xfs_agblock_t) - 1));
-	return 0;
+	// Deleted.
 }
 
 static void

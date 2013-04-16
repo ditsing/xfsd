@@ -1145,19 +1145,7 @@ xfs_btree_log_keys(
 	int			first,
 	int			last)
 {
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ENTRY);
-	XFS_BTREE_TRACE_ARGBII(cur, bp, first, last);
-
-	if (bp) {
-		xfs_trans_log_buf(cur->bc_tp, bp,
-				  xfs_btree_key_offset(cur, first),
-				  xfs_btree_key_offset(cur, last + 1) - 1);
-	} else {
-		xfs_trans_log_inode(cur->bc_tp, cur->bc_private.b.ip,
-				xfs_ilog_fbroot(cur->bc_private.b.whichfork));
-	}
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+	// Deleted.
 }
 
 /*
@@ -1170,14 +1158,7 @@ xfs_btree_log_recs(
 	int			first,
 	int			last)
 {
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ENTRY);
-	XFS_BTREE_TRACE_ARGBII(cur, bp, first, last);
-
-	xfs_trans_log_buf(cur->bc_tp, bp,
-			  xfs_btree_rec_offset(cur, first),
-			  xfs_btree_rec_offset(cur, last + 1) - 1);
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+	// Deleted.
 }
 
 /*
@@ -1190,22 +1171,7 @@ xfs_btree_log_ptrs(
 	int			first,	/* index of first pointer to log */
 	int			last)	/* index of last pointer to log */
 {
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ENTRY);
-	XFS_BTREE_TRACE_ARGBII(cur, bp, first, last);
-
-	if (bp) {
-		struct xfs_btree_block	*block = XFS_BUF_TO_BLOCK(bp);
-		int			level = xfs_btree_get_level(block);
-
-		xfs_trans_log_buf(cur->bc_tp, bp,
-				xfs_btree_ptr_offset(cur, first, level),
-				xfs_btree_ptr_offset(cur, last + 1, level) - 1);
-	} else {
-		xfs_trans_log_inode(cur->bc_tp, cur->bc_private.b.ip,
-			xfs_ilog_fbroot(cur->bc_private.b.whichfork));
-	}
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+	// Deleted.
 }
 
 /*
@@ -1217,40 +1183,7 @@ xfs_btree_log_block(
 	struct xfs_buf		*bp,	/* buffer containing btree block */
 	int			fields)	/* mask of fields: XFS_BB_... */
 {
-	int			first;	/* first byte offset logged */
-	int			last;	/* last byte offset logged */
-	static const short	soffsets[] = {	/* table of offsets (short) */
-		offsetof(struct xfs_btree_block, bb_magic),
-		offsetof(struct xfs_btree_block, bb_level),
-		offsetof(struct xfs_btree_block, bb_numrecs),
-		offsetof(struct xfs_btree_block, bb_u.s.bb_leftsib),
-		offsetof(struct xfs_btree_block, bb_u.s.bb_rightsib),
-		XFS_BTREE_SBLOCK_LEN
-	};
-	static const short	loffsets[] = {	/* table of offsets (long) */
-		offsetof(struct xfs_btree_block, bb_magic),
-		offsetof(struct xfs_btree_block, bb_level),
-		offsetof(struct xfs_btree_block, bb_numrecs),
-		offsetof(struct xfs_btree_block, bb_u.l.bb_leftsib),
-		offsetof(struct xfs_btree_block, bb_u.l.bb_rightsib),
-		XFS_BTREE_LBLOCK_LEN
-	};
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_ENTRY);
-	XFS_BTREE_TRACE_ARGBI(cur, bp, fields);
-
-	if (bp) {
-		xfs_btree_offsets(fields,
-				  (cur->bc_flags & XFS_BTREE_LONG_PTRS) ?
-					loffsets : soffsets,
-				  XFS_BB_NUM_BITS, &first, &last);
-		xfs_trans_log_buf(cur->bc_tp, bp, first, last);
-	} else {
-		xfs_trans_log_inode(cur->bc_tp, cur->bc_private.b.ip,
-			xfs_ilog_fbroot(cur->bc_private.b.whichfork));
-	}
-
-	XFS_BTREE_TRACE_CURSOR(cur, XBT_EXIT);
+	// Deleted.
 }
 
 /*
@@ -1679,6 +1612,10 @@ error0:
 }
 
 /*
+ * Not working.
+ */
+
+/*
  * Update keys at all levels from here to the root along the cursor's path.
  */
 STATIC int
@@ -1787,6 +1724,10 @@ error0:
 	return error;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Move 1 record left from cur/level if possible.
  * Update cur to reflect the new path.
@@ -1970,6 +1911,10 @@ error0:
 	return error;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Move 1 record right from cur/level if possible.
  * Update cur to reflect the new path.
@@ -2144,6 +2089,10 @@ error1:
 	xfs_btree_del_cursor(tcur, XFS_BTREE_ERROR);
 	return error;
 }
+
+/*
+ * Not working.
+ */
 
 /*
  * Split cur/level block in half.
@@ -2331,6 +2280,10 @@ error0:
 	return error;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Copy the old inode root contents into a real block and make the
  * broot point to it.
@@ -2432,6 +2385,10 @@ error0:
 	return error;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Allocate a new root block, fill it in.
  */
@@ -2629,6 +2586,10 @@ xfs_btree_make_block_unfull(
 	return 0;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Insert one record/level.  Return information to the caller
  * allowing the next level up to proceed if necessary.
@@ -3081,6 +3042,10 @@ xfs_btree_dec_cursor(
 	return 0;
 }
 
+
+/*
+ * Not working.
+ */
 /*
  * Single level of the btree record deletion routine.
  * Delete record pointed to by cur/level.

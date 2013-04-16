@@ -490,6 +490,9 @@ xfs_dir2_data_freescan(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Initialize a data block at the given block number in the directory.
  * Give back the buffer for the created block.
  */
@@ -560,14 +563,7 @@ xfs_dir2_data_log_entry(
 	struct xfs_buf		*bp,
 	xfs_dir2_data_entry_t	*dep)		/* data entry pointer */
 {
-	xfs_dir2_data_hdr_t	*hdr = bp->b_addr;
-
-	ASSERT(hdr->magic == cpu_to_be32(XFS_DIR2_DATA_MAGIC) ||
-	       hdr->magic == cpu_to_be32(XFS_DIR2_BLOCK_MAGIC));
-
-	xfs_trans_log_buf(tp, bp, (uint)((char *)dep - (char *)hdr),
-		(uint)((char *)(xfs_dir2_data_entry_tag_p(dep) + 1) -
-		       (char *)hdr - 1));
+	// Deleted.
 }
 
 /*
@@ -578,12 +574,7 @@ xfs_dir2_data_log_header(
 	struct xfs_trans	*tp,
 	struct xfs_buf		*bp)
 {
-	xfs_dir2_data_hdr_t	*hdr = bp->b_addr;
-
-	ASSERT(hdr->magic == cpu_to_be32(XFS_DIR2_DATA_MAGIC) ||
-	       hdr->magic == cpu_to_be32(XFS_DIR2_BLOCK_MAGIC));
-
-	xfs_trans_log_buf(tp, bp, 0, sizeof(*hdr) - 1);
+	// Deleted.
 }
 
 /*
@@ -595,26 +586,12 @@ xfs_dir2_data_log_unused(
 	struct xfs_buf		*bp,
 	xfs_dir2_data_unused_t	*dup)		/* data unused pointer */
 {
-	xfs_dir2_data_hdr_t	*hdr = bp->b_addr;
-
-	ASSERT(hdr->magic == cpu_to_be32(XFS_DIR2_DATA_MAGIC) ||
-	       hdr->magic == cpu_to_be32(XFS_DIR2_BLOCK_MAGIC));
-
-	/*
-	 * Log the first part of the unused entry.
-	 */
-	xfs_trans_log_buf(tp, bp, (uint)((char *)dup - (char *)hdr),
-		(uint)((char *)&dup->length + sizeof(dup->length) -
-		       1 - (char *)hdr));
-	/*
-	 * Log the end (tag) of the unused entry.
-	 */
-	xfs_trans_log_buf(tp, bp,
-		(uint)((char *)xfs_dir2_data_unused_tag_p(dup) - (char *)hdr),
-		(uint)((char *)xfs_dir2_data_unused_tag_p(dup) - (char *)hdr +
-		       sizeof(xfs_dir2_data_off_t) - 1));
+	// Deleted.
 }
 
+/*
+ * Not working.
+ */
 /*
  * Make a byte range in the data block unused.
  * Its current contents are unimportant.
@@ -798,6 +775,9 @@ xfs_dir2_data_make_free(
 	*needscanp = needscan;
 }
 
+/*
+ * Not working.
+ */
 /*
  * Take a byte range out of an existing unused space and make it un-free.
  */

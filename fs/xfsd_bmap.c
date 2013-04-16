@@ -1161,82 +1161,7 @@ xfs_bmap_local_to_extents(
 				   struct xfs_inode *ip,
 				   struct xfs_ifork *ifp))
 {
-	int		error;		/* error return value */
-	int		flags;		/* logging flags returned */
-	xfs_ifork_t	*ifp;		/* inode fork pointer */
-
-	/*
-	 * We don't want to deal with the case of keeping inode data inline yet.
-	 * So sending the data fork of a regular inode is invalid.
-	 */
-	ASSERT(!(S_ISREG(ip->i_d.di_mode) && whichfork == XFS_DATA_FORK));
-	ifp = XFS_IFORK_PTR(ip, whichfork);
-	ASSERT(XFS_IFORK_FORMAT(ip, whichfork) == XFS_DINODE_FMT_LOCAL);
-	flags = 0;
-	error = 0;
-	if (ifp->if_bytes) {
-		xfs_alloc_arg_t	args;	/* allocation arguments */
-		xfs_buf_t	*bp;	/* buffer for extent block */
-		xfs_bmbt_rec_host_t *ep;/* extent record pointer */
-
-		ASSERT((ifp->if_flags &
-			(XFS_IFINLINE|XFS_IFEXTENTS|XFS_IFEXTIREC)) == XFS_IFINLINE);
-		memset(&args, 0, sizeof(args));
-		args.tp = tp;
-		args.mp = ip->i_mount;
-		args.firstblock = *firstblock;
-		/*
-		 * Allocate a block.  We know we need only one, since the
-		 * file currently fits in an inode.
-		 */
-		if (*firstblock == NULLFSBLOCK) {
-			args.fsbno = XFS_INO_TO_FSB(args.mp, ip->i_ino);
-			args.type = XFS_ALLOCTYPE_START_BNO;
-		} else {
-			args.fsbno = *firstblock;
-			args.type = XFS_ALLOCTYPE_NEAR_BNO;
-		}
-		args.total = total;
-		args.minlen = args.maxlen = args.prod = 1;
-		error = xfs_alloc_vextent(&args);
-		if (error)
-			goto done;
-
-		/* Can't fail, the space was reserved. */
-		ASSERT(args.fsbno != NULLFSBLOCK);
-		ASSERT(args.len == 1);
-		*firstblock = args.fsbno;
-		bp = xfs_btree_get_bufl(args.mp, tp, args.fsbno, 0);
-
-		/* initialise the block and copy the data */
-		init_fn(bp, ip, ifp);
-
-		/* account for the change in fork size and log everything */
-		xfs_trans_log_buf(tp, bp, 0, ifp->if_bytes - 1);
-		xfs_bmap_forkoff_reset(args.mp, ip, whichfork);
-		xfs_idata_realloc(ip, -ifp->if_bytes, whichfork);
-		xfs_iext_add(ifp, 0, 1);
-		ep = xfs_iext_get_ext(ifp, 0);
-		xfs_bmbt_set_allf(ep, 0, args.fsbno, 1, XFS_EXT_NORM);
-		trace_xfs_bmap_post_update(ip, 0,
-				whichfork == XFS_ATTR_FORK ? BMAP_ATTRFORK : 0,
-				_THIS_IP_);
-		XFS_IFORK_NEXT_SET(ip, whichfork, 1);
-		ip->i_d.di_nblocks = 1;
-		xfs_trans_mod_dquot_byino(tp, ip,
-			XFS_TRANS_DQ_BCOUNT, 1L);
-		flags |= xfs_ilog_fext(whichfork);
-	} else {
-		ASSERT(XFS_IFORK_NEXTENTS(ip, whichfork) == 0);
-		xfs_bmap_forkoff_reset(ip->i_mount, ip, whichfork);
-	}
-	ifp->if_flags &= ~XFS_IFINLINE;
-	ifp->if_flags |= XFS_IFEXTENTS;
-	XFS_IFORK_FMT_SET(ip, whichfork, XFS_DINODE_FMT_EXTENTS);
-	flags |= XFS_ILOG_CORE;
-done:
-	*logflagsp = flags;
-	return error;
+	// Deleted.
 }
 
 /*
@@ -1335,6 +1260,9 @@ xfs_symlink_local_to_remote(
 	memcpy(bp->b_addr, ifp->if_u1.if_data, ifp->if_bytes);
 }
 
+/*
+ * Not working.
+ */
 /*
  * Called from xfs_bmap_add_attrfork to handle local format files. Each
  * different data fork content type needs a different callout to do the
@@ -4635,6 +4563,9 @@ xfs_bmapi_convert_unwritten(
 	return 0;
 }
 
+/*
+ * Not working.
+ */
 /*
  * Map file blocks to filesystem blocks, and allocate blocks or convert the
  * extent state if necessary.  Details behaviour is controlled by the flags

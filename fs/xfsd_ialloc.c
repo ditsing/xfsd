@@ -160,76 +160,12 @@ xfs_ialloc_inode_init(
 	xfs_agblock_t		length,
 	unsigned int		gen)
 {
-	struct xfs_buf		*fbuf;
-	struct xfs_dinode	*free;
-	int			blks_per_cluster, nbufs, ninodes;
-	int			version;
-	int			i, j;
-	xfs_daddr_t		d;
-
-	/*
-	 * Loop over the new block(s), filling in the inodes.
-	 * For small block sizes, manipulate the inodes in buffers
-	 * which are multiples of the blocks size.
-	 */
-	if (mp->m_sb.sb_blocksize >= XFS_INODE_CLUSTER_SIZE(mp)) {
-		blks_per_cluster = 1;
-		nbufs = length;
-		ninodes = mp->m_sb.sb_inopblock;
-	} else {
-		blks_per_cluster = XFS_INODE_CLUSTER_SIZE(mp) /
-				   mp->m_sb.sb_blocksize;
-		nbufs = length / blks_per_cluster;
-		ninodes = blks_per_cluster * mp->m_sb.sb_inopblock;
-	}
-
-	/*
-	 * Figure out what version number to use in the inodes we create.
-	 * If the superblock version has caught up to the one that supports
-	 * the new inode format, then use the new inode version.  Otherwise
-	 * use the old version so that old kernels will continue to be
-	 * able to use the file system.
-	 */
-	if (xfs_sb_version_hasnlink(&mp->m_sb))
-		version = 2;
-	else
-		version = 1;
-
-	for (j = 0; j < nbufs; j++) {
-		/*
-		 * Get the block.
-		 */
-		d = XFS_AGB_TO_DADDR(mp, agno, agbno + (j * blks_per_cluster));
-		fbuf = xfs_trans_get_buf(tp, mp->m_ddev_targp, d,
-					 mp->m_bsize * blks_per_cluster,
-					 XBF_UNMAPPED);
-		if (!fbuf)
-			return ENOMEM;
-		/*
-		 * Initialize all inodes in this buffer and then log them.
-		 *
-		 * XXX: It would be much better if we had just one transaction
-		 *	to log a whole cluster of inodes instead of all the
-		 *	individual transactions causing a lot of log traffic.
-		 */
-		fbuf->b_ops = &xfs_inode_buf_ops;
-		xfs_buf_zero(fbuf, 0, ninodes << mp->m_sb.sb_inodelog);
-		for (i = 0; i < ninodes; i++) {
-			int	ioffset = i << mp->m_sb.sb_inodelog;
-			uint	isize = sizeof(struct xfs_dinode);
-
-			free = xfs_make_iptr(mp, fbuf, i);
-			free->di_magic = cpu_to_be16(XFS_DINODE_MAGIC);
-			free->di_version = version;
-			free->di_gen = cpu_to_be32(gen);
-			free->di_next_unlinked = cpu_to_be32(NULLAGINO);
-			xfs_trans_log_buf(tp, fbuf, ioffset, ioffset + isize - 1);
-		}
-		xfs_trans_inode_alloc_buf(tp, fbuf);
-	}
-	return 0;
+	// Deleted.
 }
 
+/*
+ * Not working.
+ */
 /*
  * Allocate new inodes in the allocation group specified by agbp.
  * Return 0 for success, else error code.
@@ -603,6 +539,9 @@ xfs_ialloc_get_rec(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Allocate an inode.
  *
  * The caller selected an AG for us, and made sure that free inodes are
@@ -888,6 +827,10 @@ error0:
  * data structures are updated.  The inode itself is not read in, since doing so
  * would break ordering constraints with xfs_reclaim.
  */
+
+/*
+ * Not working.
+ */
 int
 xfs_dialloc(
 	struct xfs_trans	*tp,
@@ -1026,6 +969,9 @@ out_error:
 	return XFS_ERROR(error);
 }
 
+/*
+ * Not working.
+ */
 /*
  * Free disk inode.  Carefully avoids touching the incore inode, all
  * manipulations incore are the caller's responsibility.
@@ -1174,7 +1120,7 @@ xfs_difree(
 			goto error0;
 		}
 
-		/* 
+		/*
 		 * Change the inode free counts and log the ag/sb changes.
 		 */
 		be32_add_cpu(&agi->agi_freecount, 1);
@@ -1424,37 +1370,7 @@ xfs_ialloc_log_agi(
 	xfs_buf_t	*bp,		/* allocation group header buffer */
 	int		fields)		/* bitmask of fields to log */
 {
-	int			first;		/* first byte number */
-	int			last;		/* last byte number */
-	static const short	offsets[] = {	/* field starting offsets */
-					/* keep in sync with bit definitions */
-		offsetof(xfs_agi_t, agi_magicnum),
-		offsetof(xfs_agi_t, agi_versionnum),
-		offsetof(xfs_agi_t, agi_seqno),
-		offsetof(xfs_agi_t, agi_length),
-		offsetof(xfs_agi_t, agi_count),
-		offsetof(xfs_agi_t, agi_root),
-		offsetof(xfs_agi_t, agi_level),
-		offsetof(xfs_agi_t, agi_freecount),
-		offsetof(xfs_agi_t, agi_newino),
-		offsetof(xfs_agi_t, agi_dirino),
-		offsetof(xfs_agi_t, agi_unlinked),
-		sizeof(xfs_agi_t)
-	};
-#ifdef DEBUG
-	xfs_agi_t		*agi;	/* allocation group header */
-
-	agi = XFS_BUF_TO_AGI(bp);
-	ASSERT(agi->agi_magicnum == cpu_to_be32(XFS_AGI_MAGIC));
-#endif
-	/*
-	 * Compute byte offsets for the first and last fields.
-	 */
-	xfs_btree_offsets(fields, offsets, XFS_AGI_NUM_BITS, &first, &last);
-	/*
-	 * Log the allocation group inode header buffer.
-	 */
-	xfs_trans_log_buf(tp, bp, first, last);
+	// Deleted.
 }
 
 #ifdef DEBUG

@@ -267,6 +267,9 @@ xfs_dir2_block_compact(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Add an entry to a block directory.
  */
 int						/* error */
@@ -612,14 +615,7 @@ xfs_dir2_block_log_leaf(
 	int			first,		/* index of first logged leaf */
 	int			last)		/* index of last logged leaf */
 {
-	xfs_dir2_data_hdr_t	*hdr = bp->b_addr;
-	xfs_dir2_leaf_entry_t	*blp;
-	xfs_dir2_block_tail_t	*btp;
-
-	btp = xfs_dir2_block_tail_p(tp->t_mountp, hdr);
-	blp = xfs_dir2_block_leaf_p(btp);
-	xfs_trans_log_buf(tp, bp, (uint)((char *)&blp[first] - (char *)hdr),
-		(uint)((char *)&blp[last + 1] - (char *)hdr - 1));
+	// Deleted.
 }
 
 /*
@@ -630,12 +626,7 @@ xfs_dir2_block_log_tail(
 	xfs_trans_t		*tp,		/* transaction structure */
 	struct xfs_buf		*bp)		/* block buffer */
 {
-	xfs_dir2_data_hdr_t	*hdr = bp->b_addr;
-	xfs_dir2_block_tail_t	*btp;
-
-	btp = xfs_dir2_block_tail_p(tp->t_mountp, hdr);
-	xfs_trans_log_buf(tp, bp, (uint)((char *)btp - (char *)hdr),
-		(uint)((char *)(btp + 1) - (char *)hdr - 1));
+	// Deleted.
 }
 
 /*
@@ -789,6 +780,9 @@ xfs_dir2_block_lookup_int(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Remove an entry from a block format directory.
  * If that makes the block small enough to fit in shortform, transform it.
  */
@@ -934,6 +928,9 @@ xfs_dir2_block_sort(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Convert a V2 leaf directory to a V2 block directory if possible.
  */
 int						/* error */
@@ -1068,6 +1065,9 @@ xfs_dir2_leaf_to_block(
 	return xfs_dir2_block_to_sf(args, dbp, size, &sfh);
 }
 
+/*
+ * Not working.
+ */
 /*
  * Convert the shortform directory to block form.
  */

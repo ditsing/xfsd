@@ -136,14 +136,7 @@ xfs_dir2_free_log_bests(
 	int			first,		/* first entry to log */
 	int			last)		/* last entry to log */
 {
-	xfs_dir2_free_t		*free;		/* freespace structure */
-
-	free = bp->b_addr;
-	ASSERT(free->hdr.magic == cpu_to_be32(XFS_DIR2_FREE_MAGIC));
-	xfs_trans_log_buf(tp, bp,
-		(uint)((char *)&free->bests[first] - (char *)free),
-		(uint)((char *)&free->bests[last] - (char *)free +
-		       sizeof(free->bests[0]) - 1));
+	// Deleted.
 }
 
 /*
@@ -154,14 +147,12 @@ xfs_dir2_free_log_header(
 	struct xfs_trans	*tp,
 	struct xfs_buf		*bp)
 {
-	xfs_dir2_free_t		*free;		/* freespace structure */
-
-	free = bp->b_addr;
-	ASSERT(free->hdr.magic == cpu_to_be32(XFS_DIR2_FREE_MAGIC));
-	xfs_trans_log_buf(tp, bp, (uint)((char *)&free->hdr - (char *)free),
-		(uint)(sizeof(xfs_dir2_free_hdr_t) - 1));
+	// Deleted.
 }
 
+/*
+ * Not working.
+ */
 /*
  * Convert a leaf-format directory to a node-format directory.
  * We need to change the magic number of the leaf block, and copy
@@ -900,6 +891,9 @@ xfs_dir2_leafn_rebalance(
 	}
 }
 
+/*
+ * Not working.
+ */
 static int
 xfs_dir2_data_block_free(
 	xfs_da_args_t		*args,
@@ -1420,6 +1414,9 @@ done:
 	return rval;
 }
 
+/*
+ * Not working.
+ */
 /*
  * Add the data entry for a node-format directory name addition.
  * The leaf entry is added in xfs_dir2_leafn_add.

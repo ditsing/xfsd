@@ -352,6 +352,9 @@ xfs_dir2_leaf_find_entry(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Add an entry to a leaf form directory.
  */
 int						/* error */
@@ -692,6 +695,10 @@ xfs_dir2_leaf_check(
 }
 #endif	/* DEBUG */
 
+
+/*
+ * Not working.
+ */
 /*
  * Compact out any stale entries in the leaf.
  * Log the header and changed leaf entries, if any.
@@ -1290,18 +1297,7 @@ xfs_dir2_leaf_log_bests(
 	int			first,		/* first entry to log */
 	int			last)		/* last entry to log */
 {
-	__be16			*firstb;	/* pointer to first entry */
-	__be16			*lastb;		/* pointer to last entry */
-	xfs_dir2_leaf_t		*leaf;		/* leaf structure */
-	xfs_dir2_leaf_tail_t	*ltp;		/* leaf tail structure */
-
-	leaf = bp->b_addr;
-	ASSERT(leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAF1_MAGIC));
-	ltp = xfs_dir2_leaf_tail_p(tp->t_mountp, leaf);
-	firstb = xfs_dir2_leaf_bests_p(ltp) + first;
-	lastb = xfs_dir2_leaf_bests_p(ltp) + last;
-	xfs_trans_log_buf(tp, bp, (uint)((char *)firstb - (char *)leaf),
-		(uint)((char *)lastb - (char *)leaf + sizeof(*lastb) - 1));
+	// Deleted.
 }
 
 /*
@@ -1314,17 +1310,7 @@ xfs_dir2_leaf_log_ents(
 	int			first,		/* first entry to log */
 	int			last)		/* last entry to log */
 {
-	xfs_dir2_leaf_entry_t	*firstlep;	/* pointer to first entry */
-	xfs_dir2_leaf_entry_t	*lastlep;	/* pointer to last entry */
-	xfs_dir2_leaf_t		*leaf;		/* leaf structure */
-
-	leaf = bp->b_addr;
-	ASSERT(leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAF1_MAGIC) ||
-	       leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAFN_MAGIC));
-	firstlep = &leaf->ents[first];
-	lastlep = &leaf->ents[last];
-	xfs_trans_log_buf(tp, bp, (uint)((char *)firstlep - (char *)leaf),
-		(uint)((char *)lastlep - (char *)leaf + sizeof(*lastlep) - 1));
+	// Deleted.
 }
 
 /*
@@ -1335,13 +1321,7 @@ xfs_dir2_leaf_log_header(
 	struct xfs_trans	*tp,
 	struct xfs_buf		*bp)
 {
-	xfs_dir2_leaf_t		*leaf;		/* leaf structure */
-
-	leaf = bp->b_addr;
-	ASSERT(leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAF1_MAGIC) ||
-	       leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAFN_MAGIC));
-	xfs_trans_log_buf(tp, bp, (uint)((char *)&leaf->hdr - (char *)leaf),
-		(uint)(sizeof(leaf->hdr) - 1));
+	// Deleted.
 }
 
 /*
@@ -1352,16 +1332,7 @@ xfs_dir2_leaf_log_tail(
 	struct xfs_trans	*tp,
 	struct xfs_buf		*bp)
 {
-	xfs_dir2_leaf_t		*leaf;		/* leaf structure */
-	xfs_dir2_leaf_tail_t	*ltp;		/* leaf tail structure */
-	xfs_mount_t		*mp;		/* filesystem mount point */
-
-	mp = tp->t_mountp;
-	leaf = bp->b_addr;
-	ASSERT(leaf->hdr.info.magic == cpu_to_be16(XFS_DIR2_LEAF1_MAGIC));
-	ltp = xfs_dir2_leaf_tail_p(mp, leaf);
-	xfs_trans_log_buf(tp, bp, (uint)((char *)ltp - (char *)leaf),
-		(uint)(mp->m_dirblksize - 1));
+	// Deleted.
 }
 
 /*
@@ -1543,6 +1514,9 @@ xfs_dir2_leaf_lookup_int(
 	return XFS_ERROR(ENOENT);
 }
 
+/*
+ * Not working.
+ */
 /*
  * Remove an entry from a leaf format directory.
  */
@@ -1785,6 +1759,9 @@ xfs_dir2_leaf_search_hash(
 }
 
 /*
+ * Not working.
+ */
+/*
  * Trim off a trailing data block.  We know it's empty since the leaf
  * freespace table says so.
  */
@@ -1860,6 +1837,9 @@ xfs_dir2_leaf_size(
 	    sizeof(xfs_dir2_leaf_tail_t);
 }
 
+/*
+ * Not working.
+ */
 /*
  * Convert node form directory to leaf form directory.
  * The root of the node form dir needs to already be a LEAFN block.
