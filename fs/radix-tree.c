@@ -56,13 +56,9 @@ static unsigned long height_to_maxindex[RADIX_TREE_MAX_PATH];
  * Radix tree node cache.
  */
 
-/*
 #define radix_tree_node_alloc(r) 	((struct radix_tree_node *) \
-		calloc(1, sizeof(struct radix_tree_node)))
-#define radix_tree_node_free(n) 	free(n)
-*/
-#define radix_tree_node_alloc(r) 	((struct radix_tree_node *)0)
-#define radix_tree_node_free(n)
+		kmem_zalloc(1, sizeof(struct radix_tree_node)))
+#define radix_tree_node_free(n) 	kmem_free(n)
 
 #ifdef RADIX_TREE_TAGS
 
