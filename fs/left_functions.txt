@@ -4,9 +4,6 @@ radix_tree_preload
 radix_tree_preload_end
 rcu_read_lock
 rcu_read_unlock
-spin_lock
-spin_lock_init
-spin_unlock
 xfs_buf_hold
 xfs_buf_iomove
 xfs_buf_lock
