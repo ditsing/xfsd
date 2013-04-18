@@ -51,6 +51,7 @@
 #include "xfsd_asm.h"
 
 #include "tslib/syscall.h"
+#include "tslib/spinlock.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"

@@ -156,13 +156,6 @@ struct __TSLIB_(list_head)
 	struct __TSLIB_(list_head) *prev, *next;
 };
 
-// Fake, need update.
-typedef struct
-{
-	/* VC does not support an empty struct. */
-	int a;
-} __TSLIB_(spinlock_t);
-
 // Fake radix_tree_root
 // No need any more. Provided by radix-tree from libxfs.
 /*
