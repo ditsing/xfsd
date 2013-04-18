@@ -106,9 +106,14 @@ void sort(void *base, size_t num, size_t size,
 
 #define EXPORT_SYMBOL(x)
 
+/*
+ * For xfs_mount.h
+ * All those locks are not needed.
+ */
 #define rcu_read_lock()
 #define rcu_read_unlock()
 #define call_rcu( para, func) func( para)
+#define mutex_init( lock)
 
 /*
  * From compiler

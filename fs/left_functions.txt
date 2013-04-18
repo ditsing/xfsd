@@ -1,4 +1,3 @@
-mutex_init
 radix_tree_preload
 radix_tree_preload_end
 xfs_buf_hold
