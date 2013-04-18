@@ -106,6 +106,10 @@ void sort(void *base, size_t num, size_t size,
 
 #define EXPORT_SYMBOL(x)
 
+#define rcu_read_lock()
+#define rcu_read_unlock()
+#define call_rcu( para, func) func( para)
+
 /*
  * From compiler
  */
