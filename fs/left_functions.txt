@@ -16,7 +16,6 @@ xfs_buf_read_uncached
 xfs_buf_rele
 xfs_buf_trylock
 xfs_buf_unlock
-xfs_trans_binval
 xfs_trans_brelse
 xfs_trans_get_buf_map
 xfs_trans_read_buf_map
