@@ -3,9 +3,11 @@
 #else
 #include <pthread.h>
 #include "rwsem.h"
+#include "syscall.h"
 
 void init_rwsem( struct rw_semaphore *sem)
 {
+	sem->mutex = ( pthread_mutex_t *) mem_alloc( sizeof( pthread_mutex_t));
 	pthread_mutex_init( (pthread_mutex_t *)&sem->mutex, NULL);
 	sem->reader_count = 0;
 }
