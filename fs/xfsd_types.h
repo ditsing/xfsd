@@ -128,22 +128,6 @@ typedef __TSLIB_(__uint64_t) __TSLIB_(__psunsigned_t);
 #define cpu_to_le32( x) x
 #define cpu_to_le64( x) x
 
-// Fake rb_node struct. We may not need this.
-// No, we don't.
-/*
-struct rb_node
-{
-	__u32 rb_parent;
-	__u32 rb_left;
-	__u32 rb_right;
-};
-
-struct rb_root
-{
-	struct rb_node *rb_node;
-};
-*/
-
 // For atomic_t, copied from linux/types.h
 typedef struct
 {
@@ -156,17 +140,6 @@ struct __TSLIB_(list_head)
 	struct __TSLIB_(list_head) *prev, *next;
 };
 
-// Fake radix_tree_root
-// No need any more. Provided by radix-tree from libxfs.
-/*
-struct __TSLIB_(radix_tree_root)
-{
-	__u32 height;
-	__u32 gfp_mask;
-	struct __TSLIB_(radix_tree_root) *rnode;
-};
-*/
-
 // mutex ???, This is a seriouse problem.
 FAKE_STRUCT( mutex);
 
@@ -176,10 +149,6 @@ struct __TSLIB_(rcu_head)
 	struct __TSLIB_(rcu_head) *next;
 	void (*func)( struct __TSLIB_(rcu_head) *head);
 };
-
-// Fake kmem_zone_t
-// This is about mem manage! Be careful.
-FAKE_STRUCT_TYPE( kmem_zone);
 
 // Copied from xfs/xfs_linux.h
 // What are they talking about.
@@ -325,12 +294,6 @@ struct __TSLIB_(xfs_buf_ops);
  * Copied from fs/xfs/kmem.h
  */
 typedef unsigned __TSLIB_(xfs_km_flags_t);
-
-/*
- * Copied from xfs_trans.h
- * For xfs_inode_item.h
-FAKE_STRUCT_TYPE(xfs_log_item);
- */
 
 /*
  * Copied from xfs/uuid.h
