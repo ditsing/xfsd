@@ -2,6 +2,7 @@
 #error "what's the fuck!"
 #else
 #include <pthread.h>
+#define kernel_mutex_t pthread_mutex_t
 #include "rwsem.h"
 #include "syscall.h"
 

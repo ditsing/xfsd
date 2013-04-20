@@ -1,9 +1,11 @@
 #ifndef __TSLIB_RW_SEM_H__
 #define __TSLIB_RW_SEM_H__
 
+struct kernel_mutex;
+
 struct rw_semaphore
 {
-	void *mutex;
+	struct kernel_mutex *mutex;
 	int reader_count;
 };
 
