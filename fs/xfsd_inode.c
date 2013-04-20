@@ -310,24 +310,6 @@ xfs_isilocked(
 }
 #endif
 
-void
-__xfs_iflock(
-	struct xfs_inode	*ip)
-{
-	/*
-	wait_queue_head_t *wq = bit_waitqueue(&ip->i_flags, __XFS_IFLOCK_BIT);
-	DEFINE_WAIT_BIT(wait, &ip->i_flags, __XFS_IFLOCK_BIT);
-
-	do {
-		prepare_to_wait_exclusive(wq, &wait.wait, TASK_UNINTERRUPTIBLE);
-		if (xfs_isiflocked(ip))
-			io_schedule();
-	} while (!xfs_iflock_nowait(ip));
-
-	finish_wait(wq, &wait.wait);
-	*/
-}
-
 #ifdef DEBUG
 /*
  * Make sure that the extents in the given memory buffer

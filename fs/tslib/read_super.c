@@ -98,7 +98,7 @@ int get_sb_sectsize()
 	return sb.sb_sectsize;
 }
 
-int get_agf_magic( char * magic)
+void get_agf_magic( char * magic)
 {
 	char *cur = ( char *)&(agf.agf_magicnum);
 	mem_cpy( magic, cur, 4);

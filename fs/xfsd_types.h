@@ -273,20 +273,6 @@ typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
  */
 struct __TSLIB_(xfs_buf);
 
-/*
- * For xfs_trans.h
- */
-/*
-struct __TSLIB_(xfs_buf_map) {
-	xfs_daddr_t		bm_bn;
-	int			bm_len;
-};
-*/
-
-/*
-struct __TSLIB_(xfs_buf_map);
-struct __TSLIB_(xfs_buf_ops);
-*/
 #define DEFINE_SINGLE_BUF_MAP(map, blkno, numblk) \
 	struct xfs_buf_map (map) = { .bm_bn = (blkno), .bm_len = (numblk) };
 
