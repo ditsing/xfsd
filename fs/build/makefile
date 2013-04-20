@@ -1,5 +1,5 @@
 vpath % .. ../tslib ../xfs ../linux
-CFLAGS = -I ../ -g -lpthread
+CFLAGS = -I ../ -g -nodefaultlibs
 CC = gcc
 OBJS = read_super.o		\
        syscall.o		\
@@ -19,7 +19,6 @@ OBJS = read_super.o		\
        xfsd_attr_leaf.o 	\
        xfsd_attr.o 		\
        xfsd_inode.o 		\
-       radix-tree.o 		\
        xfsd_buf.o 		\
        xfsd_bmap.o 		\
        xfsd_btree.o 		\
@@ -31,16 +30,12 @@ OBJS = read_super.o		\
        xfsd_mem.o 		\
        xfsd_super.o 		\
        process.o 		\
+       radix_tree.o 		\
        rwsem.o
 	
 
 hello: hello.c $(OBJS)
-
-rwsem.o:
-	$(CC) $(CFLAGS) -c $< -o $@
-
-dll: read_super.o syscall.o read_file.o xfsd_dir2_sf.o xfsd_bmap_btree.o
-	$(CC) $(CFLAGS) -shared -fpic read_super.o syscall.o read_file.o xfsd_dir2_sf.o xfsd_bmap_btree.o -o xfsd.dll
+	$(CC) -I ../ -g -Wall -lpthread $< $(OBJS) -o $@
 
 clean:
 	rm -f hello

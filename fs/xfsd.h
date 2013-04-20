@@ -52,12 +52,12 @@
 
 #include "tslib/syscall.h"
 #include "tslib/spinlock.h"
+#include "tslib/radix_tree.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
 #include "linux/bytes.h"
 #include "linux/inode.h"
-#include "radix-tree.h"
 
 #include "xfsd_mem.h"
 #include "xfsd_buf.h"
