@@ -52,7 +52,6 @@
 
 #include "tslib/syscall.h"
 #include "tslib/spinlock.h"
-#include "tslib/radix_tree.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
@@ -65,6 +64,8 @@
 #include "xfsd_stats.h"
 #include "xfsd_message.h"
 #include "xfsd_mrlock.h"
+
+#include "radix-tree.h"
 
 #define __return_address (0)
 #define __releases(x)
@@ -127,6 +128,9 @@ void sort(void *base, size_t num, size_t size,
 
 #define PAGE_CACHE_SHIFT 13
 
+#define radix_tree_preload(mask) 		1
+#define radix_tree_preload_end(mask) 		1
+
 /*
  * Need to be updated
  */
@@ -134,5 +138,7 @@ void sort(void *base, size_t num, size_t size,
 #define DEFINE_MUTEX(x) int x;
 static inline void xfs_do_force_shutdown(struct xfs_mount *mp, int flags, char *fname,
 		int lnnum) {}
+#define smp_mb()
+#define wake_up_bit( a, b)
 #endif
 

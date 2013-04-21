@@ -30,7 +30,7 @@ OBJS = read_super.o		\
        xfsd_mem.o 		\
        xfsd_super.o 		\
        process.o 		\
-       radix_tree.o 		\
+       radix-tree.o 		\
        rwsem.o
 	
 

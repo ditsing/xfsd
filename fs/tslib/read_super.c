@@ -20,7 +20,6 @@ xfs_sb_t sb;
 static xfs_agf_t agf;
 static xfs_agi_t agi;
 static xfs_agfl_t agfl[10];
-static struct xfs_btree_block bblock;
 
 int read_block( int offset, void *mem, int nmeb)
 {
