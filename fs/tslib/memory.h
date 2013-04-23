@@ -19,11 +19,13 @@
 #define ___GFP_IO		0x40u
 #define ___GFP_FS		0x80u
 #define ___GFP_NOWARN		0x200u
+#define ___GFP_NORETRY		0x1000u
 #define __GFP_WAIT	((__force gfp_t)___GFP_WAIT)	/* Can wait and reschedule? */
 #define __GFP_HIGH	((__force gfp_t)___GFP_HIGH)	/* Should access emergency pools? */
 #define __GFP_IO	((__force gfp_t)___GFP_IO)	/* Can start physical IO? */
 #define __GFP_FS	((__force gfp_t)___GFP_FS)	/* Can call down to low-level FS? */
 #define __GFP_NOWARN	((__force gfp_t)___GFP_NOWARN)	/* Suppress page allocation failure warning */
+#define __GFP_NORETRY	((__force gfp_t)___GFP_NORETRY)
 
 #define GFP_KERNEL	(__GFP_WAIT | __GFP_IO | __GFP_FS)
 #define GFP_ATOMIC	(__GFP_HIGH)

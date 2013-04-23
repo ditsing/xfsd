@@ -136,7 +136,6 @@ void sort(void *base, size_t num, size_t size,
 #define PAGE_SHIFT 12
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_CACHE_SIZE	(1UL << PAGE_CACHE_SHIFT)
-#define PAGE_MASK	(~(PAGE_SIZE-1))
 
 #define radix_tree_preload(mask) 		1
 #define radix_tree_preload_end(mask) 		1
@@ -165,5 +164,7 @@ static inline void xfs_do_force_shutdown(struct xfs_mount *mp, int flags, char *
 		int lnnum) {}
 #define smp_mb()
 #define wake_up_bit( a, b)
+#define init_completion(x)
+#define init_waitqueue_head(x)
 #endif
 
