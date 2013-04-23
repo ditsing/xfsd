@@ -52,11 +52,13 @@
 
 #include "tslib/syscall.h"
 #include "tslib/spinlock.h"
+#include "tslib/sema.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
 #include "linux/bytes.h"
 #include "linux/inode.h"
+#include "linux/list.h"
 
 #include "xfsd_mem.h"
 #include "xfsd_buf.h"
@@ -126,10 +128,33 @@ void sort(void *base, size_t num, size_t size,
  */
 #define ULONG_MAX (~0UL)
 
-#define PAGE_CACHE_SHIFT 13
+/*
+ * Copied from linux/pagemap.h, used in xfs_mount.h.
+ * This won't be used.
+ */
+#define PAGE_CACHE_SHIFT 12
+#define PAGE_SHIFT 12
+#define PAGE_SIZE	(1UL << PAGE_SHIFT)
+#define PAGE_CACHE_SIZE	(1UL << PAGE_CACHE_SHIFT)
+#define PAGE_MASK	(~(PAGE_SIZE-1))
 
 #define radix_tree_preload(mask) 		1
 #define radix_tree_preload_end(mask) 		1
+
+/*
+ * Copied from xfs_fs.h
+ */
+/*
+ * Block I/O parameterization.	A basic block (BB) is the lowest size of
+ * filesystem allocation, and must equal 512.  Length units given to bio
+ * routines are in BB's.
+ */
+#define BBSHIFT		9
+#define BBSIZE		(1<<BBSHIFT)
+#define BBMASK		(BBSIZE-1)
+#define BTOBB(bytes)	(((__u64)(bytes) + BBSIZE - 1) >> BBSHIFT)
+#define BTOBBT(bytes)	((__u64)(bytes) >> BBSHIFT)
+#define BBTOB(bbs)	((bbs) << BBSHIFT)
 
 /*
  * Need to be updated

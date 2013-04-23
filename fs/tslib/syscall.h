@@ -18,6 +18,7 @@ int read_file_length( void *ptr, long offset, int size, int nmemb);
 void *mem_alloc( size_t size);
 void *mem_zalloc( size_t size);
 void mem_free( const void *p);
+void *mem_realloc( void *p, size_t size);
 
 #ifndef __IN_TSLIB__
 

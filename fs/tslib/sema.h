@@ -2,9 +2,11 @@
 #define __TSLIB_SEMA_H__
 #ifdef WIN32
 #else
+
+struct kerenl_sem;
 struct semaphore
 {
-	kerenl_sem_t *sem;
+	struct kerenl_sem *sem;
 };
 
 int down_trylock(struct semaphore *sem);

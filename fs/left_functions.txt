@@ -1,5 +1,3 @@
-radix_tree_preload
-radix_tree_preload_end
 xfs_buf_hold
 xfs_buf_iomove
 xfs_buf_lock

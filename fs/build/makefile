@@ -1,5 +1,5 @@
 vpath % .. ../tslib ../xfs ../linux
-CFLAGS = -I ../ -g -nodefaultlibs -Wall
+CFLAGS = -I ../ -g -nodefaultlibs
 CC = gcc
 OBJS = read_super.o		\
        syscall.o		\
@@ -29,8 +29,10 @@ OBJS = read_super.o		\
        xfsd_mount.o 		\
        xfsd_mem.o 		\
        xfsd_super.o 		\
+       xfsd_trans.o 		\
        process.o 		\
        radix-tree.o 		\
+       sema.o 			\
        rwsem.o
 	
 

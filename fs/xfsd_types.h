@@ -224,13 +224,6 @@ FAKE_STRUCT( work_struct);
 FAKE_STRUCT( shrinker);
 
 /*
- * Copied from linux/pagemap.h, used in xfs_mount.h.
- * This won't be used.
- */
-#define PAGE_SIZE (1<<12)
-#define PAGE_CACHE_SIZE PAGE_SIZE
-
-/*
  * Copied from linux/fs.h, used in xfs_dir2_priv.h
  */
 typedef long 				__TSLIB_(__kernel_off_t);
@@ -296,7 +289,6 @@ typedef unsigned __TSLIB_(xfs_buf_flags_t);
 /*
  * Used in xfs/xfs_buf.h
  */
-FAKE_STRUCT(semaphore);
 FAKE_STRUCT_TYPE(dev);
 FAKE_STRUCT_TYPE(wait_queue_head);
 FAKE_STRUCT(completion);

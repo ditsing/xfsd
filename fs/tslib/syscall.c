@@ -112,3 +112,8 @@ void mem_free( const void *p)
 {
 	return free( ( void *) p);
 }
+
+void *mem_realloc( void *p, size_t size)
+{
+	return realloc( p, size);
+}
