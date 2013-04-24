@@ -9,6 +9,9 @@
 
 #include "xfsd_trace.h"
 
+// To access disk.
+#include "tslib/disk.h"
+
 static kmem_zone_t *xfs_buf_zone;
 
 #define XB_SET_OWNER(x)
@@ -395,13 +398,10 @@ _xfs_buf_read(
 	bp->b_flags &= ~(XBF_WRITE | XBF_ASYNC | XBF_READ_AHEAD);
 	bp->b_flags |= flags & (XBF_READ | XBF_ASYNC | XBF_READ_AHEAD);
 
-	/*
 	xfs_buf_iorequest(bp);
 	if (flags & XBF_ASYNC)
 		return 0;
 	return xfs_buf_iowait(bp);
-	*/
-	return 0;
 }
 
 xfs_buf_t *
@@ -472,12 +472,11 @@ xfs_buf_read_uncached(
 	bp->b_flags |= XBF_READ;
 	bp->b_ops = ops;
 
-	/*
-	xfsbdstrat(target->bt_mount, bp);
+	xfs_buf_iorequest(bp);
 	xfs_buf_iowait(bp);
-	*/
 	return bp;
 }
+
 
 xfs_buf_t *
 xfs_buf_get_uncached(
@@ -485,10 +484,40 @@ xfs_buf_get_uncached(
 	size_t			numblks,
 	int			flags)
 {
+	unsigned long		page_count;
+	int			error, i;
+	struct xfs_buf		*bp;
+	DEFINE_SINGLE_BUF_MAP(map, XFS_BUF_DADDR_NULL, numblks);
+
+	bp = _xfs_buf_alloc(target, &map, 1, 0);
+	if (unlikely(bp == NULL))
+		goto fail;
+
+	bp->b_addr = kmem_alloc(numblks << BBSHIFT, KM_NOFS);
+	error = bp->b_addr == NULL;
+	if (error)
+		goto fail_free_buf;
+
+	bp->b_flags |= _XBF_PAGES;
+
+	error = _xfs_buf_map_pages(bp, 0);
+	if (unlikely(error)) {
+		xfs_warn(target->bt_mount,
+			"%s: failed to map pages\n", __func__);
+		goto fail_free_mem;
+	}
+
+	trace_xfs_buf_get_uncached(bp, _RET_IP_);
+	return bp;
+
+ fail_free_mem:
+	kmem_free(bp->b_addr);
+ fail_free_buf:
+	xfs_buf_free_maps(bp);
+	kmem_zone_free(xfs_buf_zone, bp);
+ fail:
 	return NULL;
 }
-
-
 
 void
 xfs_buf_hold(
@@ -612,6 +641,105 @@ xfs_buf_ioerror_alert(
 		(__uint64_t)XFS_BUF_ADDR(bp), func, bp->b_error, bp->b_length);
 }
 
+static void
+xfs_buf_ioapply_map(
+	struct xfs_buf	*bp,
+	int		map,
+	int		*buf_offset,
+	int		*count,
+	int		rw)
+{
+	int		size;
+	int		offset;
+
+	offset = *buf_offset;
+	/*
+	 * Limit the IO size to the length of the current vector, and update the
+	 * remaining IO count for the next time around.
+	 */
+	size = min_t(int, BBTOB(bp->b_maps[map].bm_len), *count);
+	*count -= size;
+	*buf_offset += size;
+
+	bp->b_error = tslib_read_disk( bp->b_maps[map].bm_bn, bp->b_addr + offset, size);
+}
+
+STATIC void
+_xfs_buf_ioapply(
+	struct xfs_buf	*bp)
+{
+	int		rw;
+	int		offset;
+	int		size;
+	int		i;
+
+	/*
+	 * Make sure we capture only current IO errors rather than stale errors
+	 * left over from previous use of the buffer (e.g. failed readahead).
+	 */
+	bp->b_error = 0;
+
+	if (bp->b_flags & XBF_WRITE) {
+		/*
+		 * Error!
+		 */
+	} else if (bp->b_flags & XBF_READ_AHEAD) {
+	} else {
+	}
+
+	/*
+	 * Walk all the vectors issuing IO on them. Set up the initial offset
+	 * into the buffer and the desired IO size before we start -
+	 * _xfs_buf_ioapply_vec() will modify them appropriately for each
+	 * subsequent call.
+	 */
+	offset = bp->b_offset;
+	size = BBTOB(bp->b_io_length);
+	for (i = 0; i < bp->b_map_count; i++) {
+		xfs_buf_ioapply_map(bp, i, &offset, &size, rw);
+		if (bp->b_error)
+			break;
+		if (size <= 0)
+			break;	/* all done */
+	}
+}
+
+void
+xfs_buf_iorequest(
+	xfs_buf_t		*bp)
+{
+	trace_xfs_buf_iorequest(bp, _RET_IP_);
+
+	ASSERT(!(bp->b_flags & _XBF_DELWRI_Q));
+
+	xfs_buf_hold(bp);
+
+	/* Set the count to 1 initially, this will stop an I/O
+	 * completion callout which happens before we have started
+	 * all the I/O from calling xfs_buf_ioend too early.
+	 */
+	atomic_set(&bp->b_io_remaining, 1);
+
+	_xfs_buf_ioapply(bp);
+
+	xfs_buf_rele(bp);
+}
+
+/*
+ * Waits for I/O to complete on the buffer supplied.  It returns immediately if
+ * no I/O is pending or there is already a pending error on the buffer.  It
+ * returns the I/O error code, if any, or 0 if there was no error.
+ */
+int
+xfs_buf_iowait(
+	xfs_buf_t		*bp)
+{
+	trace_xfs_buf_iowait(bp, _RET_IP_);
+
+	trace_xfs_buf_iowait_done(bp, _RET_IP_);
+	return bp->b_error;
+}
+
 xfs_caddr_t
 xfs_buf_offset(
 	xfs_buf_t		*bp,
@@ -642,7 +770,6 @@ xfs_buf_iomove(
 		case XBRW_WRITE:
 			memcpy(bp->b_addr, data, csize);
 	}
-
 }
 
 int
