@@ -270,14 +270,6 @@ typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
 typedef unsigned __TSLIB_(xfs_km_flags_t);
 
 /*
- * Copied from xfs/uuid.h
- */
-typedef struct {
-	unsigned char	__u_bits[16];
-} __TSLIB_(uuid_t);
-
-
-/*
  * Used in xfs/xfs_buf.h
  */
 FAKE_STRUCT_TYPE(dev);

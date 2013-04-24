@@ -128,9 +128,7 @@ int xfs_fs_init()
 	struct xfs_mount	*mp = NULL;
 	int			flags = 0, error = ENOMEM;
 
-	/*
-	mp = kzalloc(sizeof(struct xfs_mount), GFP_KERNEL);
-	*/
+	mp = kmem_zalloc(sizeof(struct xfs_mount), KM_NOFS);
 	if (!mp)
 		goto out;
 
@@ -142,106 +140,20 @@ int xfs_fs_init()
 
 	mp->m_super = NULL;
 
-	/*
-	error = xfs_parseargs(mp, (char *)data);
-	if (error)
-		goto out_free_fsname;
-
-	sb_min_blocksize(sb, BBSIZE);
-	sb->s_xattr = xfs_xattr_handlers;
-	sb->s_export_op = &xfs_export_operations;
-#ifdef CONFIG_XFS_QUOTA
-	sb->s_qcop = &xfs_quotactl_operations;
-#endif
-	sb->s_op = &xfs_super_operations;
-
-	if (silent)
-		flags |= XFS_MFSI_QUIET;
-
-	error = xfs_open_devices(mp);
-	if (error)
-		goto out_free_fsname;
-
-	error = xfs_init_mount_workqueues(mp);
-	if (error)
-		goto out_close_devices;
-
-	error = xfs_icsb_init_counters(mp);
-	if (error)
-		goto out_destroy_workqueues;
-
 	error = xfs_readsb(mp, flags);
 	if (error)
-		goto out_destroy_counters;
-
-	error = xfs_finish_flags(mp);
-	if (error)
-		goto out_free_sb;
-
-	error = xfs_setup_devices(mp);
-	if (error)
-		goto out_free_sb;
-
-	error = xfs_filestream_mount(mp);
-	if (error)
-		goto out_free_sb;
-		*/
-
+		goto out_free_mp;
 	/*
 	 * we must configure the block size in the superblock before we run the
 	 * full mount process as the mount process can lookup and cache inodes.
 	 */
-	/*
-	sb->s_magic = XFS_SB_MAGIC;
-	sb->s_blocksize = mp->m_sb.sb_blocksize;
-	sb->s_blocksize_bits = ffs(sb->s_blocksize) - 1;
-	sb->s_maxbytes = xfs_max_file_offset(sb->s_blocksize_bits);
-	sb->s_max_links = XFS_MAXLINK;
-	sb->s_time_gran = 1;
-	set_posix_acl_flag(sb);
-
 	error = xfs_mountfs(mp);
-	if (error)
-		goto out_filestream_unmount;
-
-	root = igrab(VFS_I(mp->m_rootip));
-	if (!root) {
-		error = ENOENT;
-		goto out_unmount;
-	}
-	if (is_bad_inode(root)) {
-		error = EINVAL;
-		goto out_unmount;
-	}
-	sb->s_root = d_make_root(root);
-	if (!sb->s_root) {
-		error = ENOMEM;
-		goto out_unmount;
-	}
-
-	return 0;
-
- out_filestream_unmount:
-	xfs_filestream_unmount(mp);
+	if ( error)
+		goto out_free_sb;
  out_free_sb:
 	xfs_freesb(mp);
- out_destroy_counters:
-	xfs_icsb_destroy_counters(mp);
-out_destroy_workqueues:
-	xfs_destroy_mount_workqueues(mp);
- out_close_devices:
-	xfs_close_devices(mp);
- out_free_fsname:
-	xfs_free_fsname(mp);
+ out_free_mp:
 	kfree(mp);
-	*/
  out:
 	return -error;
-
-	/*
- out_unmount:
-	xfs_filestream_unmount(mp);
-	xfs_unmountfs(mp);
-	goto out_free_sb;
-	*/
 }

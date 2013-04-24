@@ -34,7 +34,9 @@ OBJS = read_super.o		\
        radix-tree.o 		\
        sema.o 			\
        disk.o 			\
-       rwsem.o
+       rwsem.o 			\
+       xfsd_icache.o 		\
+       xfsd_uuid.o
 	
 
 hello: hello.c $(OBJS)

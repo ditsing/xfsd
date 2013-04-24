@@ -67,6 +67,7 @@
 #include "xfsd_mrlock.h"
 
 #include "radix-tree.h"
+#include "xfs/uuid.h"
 
 #define __return_address (0)
 
@@ -113,6 +114,9 @@ void sort(void *base, size_t num, size_t size,
 #define rcu_read_unlock()
 #define call_rcu( para, func) func( para)
 #define mutex_init( lock)
+#define mutex_lock( lock)
+#define mutex_unlock( lock)
+#define DEFINE_MUTEX(x) int x
 
 /*
  * From compiler
@@ -154,4 +158,7 @@ void sort(void *base, size_t num, size_t size,
 #define init_completion(x)
 #define init_waitqueue_head(x)
 #define INIT_DELAYED_WORK(x,y)
+struct xfs_inode;
+static inline void xfs_inode_item_destroy(struct xfs_inode *x){}
+#define inode_init_always(x,y) 	 		1
 #endif
