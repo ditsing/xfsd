@@ -323,10 +323,4 @@ typedef __TSLIB_(uid_t) __TSLIB_(kuid_t);
 // From linxu/types.h
 typedef u64 __TSLIB_(blkcnt_t);
 typedef u64 __TSLIB_(sector_t);
-
-struct __TSLIB_(super_block)
-{
-	u64 s_maxbytes;
-	struct { int frozen; } s_writers;
-};
 #endif

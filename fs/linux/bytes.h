@@ -138,4 +138,9 @@ static inline int fls_long( __u32 x)
 	return fls64( x);
 }
 
+static inline int fls( __u32 x)
+{
+	return fls_long( x);
+}
+
 #endif

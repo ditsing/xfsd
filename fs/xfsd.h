@@ -153,4 +153,5 @@ void sort(void *base, size_t num, size_t size,
 
 #define init_completion(x)
 #define init_waitqueue_head(x)
+#define INIT_DELAYED_WORK(x,y)
 #endif
