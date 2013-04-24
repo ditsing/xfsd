@@ -155,10 +155,6 @@ void sort(void *base, size_t num, size_t size,
 #define BTOBBT(bytes)	((__u64)(bytes) >> BBSHIFT)
 #define BBTOB(bbs)	((bbs) << BBSHIFT)
 
-/*
- * Need to be updated
- */
-#define DEFINE_MUTEX(x) int x;
 #define init_completion(x)
 #define init_waitqueue_head(x)
 #endif

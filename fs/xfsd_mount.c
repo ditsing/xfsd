@@ -114,10 +114,6 @@ static const struct {
     { sizeof(xfs_sb_t),			 0 }
 };
 
-static DEFINE_MUTEX(xfs_uuid_table_mutex);
-static int xfs_uuid_table_size;
-static uuid_t *xfs_uuid_table;
-
 /*
  * Reference counting access wrappers to the perag structures.
  * Because we never free per-ag structures, the only thing we
