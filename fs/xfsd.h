@@ -1,9 +1,6 @@
 #ifndef __XFSD_H__
 #define __XFSD_H__
 
-#ifdef CONfiG_XFS_DEBUG
-#endif
-
 #define __KERNEL__
 
 /*
@@ -36,9 +33,11 @@
 #define DT_SOCK		12
 #define DT_WHT		14
 
-#define ASSERT(x)
 #define __bitwise
 #define __force
+#define __releases(x)
+#define __init
+#define ASSERT(x)
 #define BUG_ON(x)
 #define WARN_ON(x)
 
@@ -70,7 +69,6 @@
 #include "radix-tree.h"
 
 #define __return_address (0)
-#define __releases(x)
 
 #define min_t(type, x, y) ({			\
 	type __min1 = (x);			\
@@ -106,8 +104,6 @@ void sort(void *base, size_t num, size_t size,
 	  void (*swap_func)(void *, void *, int size));
 #define xfs_sort(a,n,s,fn)	sort(a,n,s,fn,NULL)
 #define xfs_stack_trace()
-
-#define EXPORT_SYMBOL(x)
 
 /*
  * For xfs_mount.h
@@ -158,4 +154,3 @@ void sort(void *base, size_t num, size_t size,
 #define init_completion(x)
 #define init_waitqueue_head(x)
 #endif
-
