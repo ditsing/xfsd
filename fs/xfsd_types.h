@@ -146,8 +146,8 @@ FAKE_STRUCT( mutex);
 // Fake rcu_head
 struct __TSLIB_(rcu_head)
 {
-	struct __TSLIB_(rcu_head) *next;
-	void (*func)( struct __TSLIB_(rcu_head) *head);
+	struct rcu_head *next;
+	void (*func)( struct rcu_head *head);
 };
 
 // Copied from xfs/xfs_linux.h
@@ -261,11 +261,6 @@ typedef unsigned int 			__TSLIB_(__kernel_uid_t);
 typedef __TSLIB_(__kernel_gid_t)	__TSLIB_(gid_t);
 typedef __TSLIB_(__kernel_uid_t) 	__TSLIB_(uid_t);
 
-/*
- * For xfs_log.h
- */
-struct __TSLIB_(xfs_buf);
-
 #define DEFINE_SINGLE_BUF_MAP(map, blkno, numblk) \
 	struct xfs_buf_map (map) = { .bm_bn = (blkno), .bm_len = (numblk) };
 
@@ -281,10 +276,6 @@ typedef struct {
 	unsigned char	__u_bits[16];
 } __TSLIB_(uuid_t);
 
-/*
- * Copied from xfs/xfs_buf.h
- */
-typedef unsigned __TSLIB_(xfs_buf_flags_t);
 
 /*
  * Used in xfs/xfs_buf.h
@@ -331,6 +322,7 @@ typedef __TSLIB_(gid_t) __TSLIB_(kgid_t);
 typedef __TSLIB_(uid_t) __TSLIB_(kuid_t);
 // From linxu/types.h
 typedef u64 __TSLIB_(blkcnt_t);
+typedef u64 __TSLIB_(sector_t);
 
 struct __TSLIB_(super_block)
 {
