@@ -158,12 +158,7 @@ void sort(void *base, size_t num, size_t size,
 /*
  * Need to be updated
  */
-#define printk_once( a, b)
 #define DEFINE_MUTEX(x) int x;
-static inline void xfs_do_force_shutdown(struct xfs_mount *mp, int flags, char *fname,
-		int lnnum) {}
-#define smp_mb()
-#define wake_up_bit( a, b)
 #define init_completion(x)
 #define init_waitqueue_head(x)
 #endif
