@@ -19,6 +19,7 @@
 #include "xfsd.h"
 
 #include "xfs/xfs_types.h"
+#include "xfs/xfs_fs.h"
 #include "xfs/xfs_log.h"
 #include "xfs/xfs_inum.h"
 #include "xfs/xfs_trans.h"
@@ -35,6 +36,7 @@
 #include "xfs/xfs_inode.h"
 #include "xfs/xfs_btree.h"
 #include "xfs/xfs_ialloc.h"
+#include "xfs/xfs_bmap.h"
 #include "xfs/xfs_rtalloc.h"
 #include "xfs/xfs_error.h"
 #include "xfs/xfs_attr.h"
@@ -122,7 +124,137 @@ xfs_set_inode64(struct xfs_mount *mp)
 	return index;
 }
 
+/*
+ * Slab object creation initialisation for the XFS inode.
+ * This covers only the idempotent fields in the XFS inode;
+ * all other fields need to be initialised on allocation
+ * from the slab. This avoids the need to repeatedly initialise
+ * fields in the xfs inode that left in the initialise state
+ * when freeing the inode.
+ */
+STATIC void
+xfs_fs_inode_init_once(
+	void			*inode)
+{
+	struct xfs_inode	*ip = inode;
+
+	memset(ip, 0, sizeof(struct xfs_inode));
+
+	/* xfs inode */
+	atomic_set(&ip->i_pincount, 0);
+	spin_lock_init(&ip->i_flags_lock);
+
+	mrlock_init(&ip->i_lock, MRLOCK_ALLOW_EQUAL_PRI|MRLOCK_BARRIER,
+		     "xfsino", ip->i_ino);
+}
+
+STATIC int __init
+xfs_init_zones(void)
+{
+
+	xfs_bmap_free_item_zone = kmem_zone_init(sizeof(xfs_bmap_free_item_t),
+						"xfs_bmap_free_item");
+	if (!xfs_bmap_free_item_zone)
+		goto out_destroy_log_ticket_zone;
+
+	xfs_btree_cur_zone = kmem_zone_init(sizeof(xfs_btree_cur_t),
+						"xfs_btree_cur");
+	if (!xfs_btree_cur_zone)
+		goto out_destroy_bmap_free_item_zone;
+
+	xfs_da_state_zone = kmem_zone_init(sizeof(xfs_da_state_t),
+						"xfs_da_state");
+	if (!xfs_da_state_zone)
+		goto out_destroy_btree_cur_zone;
+
+	xfs_ifork_zone = kmem_zone_init(sizeof(xfs_ifork_t), "xfs_ifork");
+	if (!xfs_ifork_zone)
+		goto out_destroy_da_state_zone;
+
+	/*
+	 * The size of the zone allocated buf log item is the maximum
+	 * size possible under XFS.  This wastes a little bit of memory,
+	 * but it is much faster.
+	 */
+	xfs_inode_zone =
+		kmem_zone_init_flags(sizeof(xfs_inode_t), "xfs_inode",
+			KM_ZONE_HWALIGN | KM_ZONE_RECLAIM | KM_ZONE_SPREAD,
+			xfs_fs_inode_init_once);
+	if (!xfs_inode_zone)
+		goto out_destroy_efi_zone;
+
+	return 0;
+
+ out_destroy_inode_zone:
+	kmem_zone_destroy(xfs_inode_zone);
+ out_destroy_efi_zone:
+ out_destroy_efd_zone:
+ out_destroy_buf_item_zone:
+ out_destroy_log_item_desc_zone:
+ out_destroy_trans_zone:
+ out_destroy_ifork_zone:
+	kmem_zone_destroy(xfs_ifork_zone);
+ out_destroy_da_state_zone:
+	kmem_zone_destroy(xfs_da_state_zone);
+ out_destroy_btree_cur_zone:
+	kmem_zone_destroy(xfs_btree_cur_zone);
+ out_destroy_bmap_free_item_zone:
+	kmem_zone_destroy(xfs_bmap_free_item_zone);
+ out_destroy_log_ticket_zone:
+ out:
+	return -ENOMEM;
+}
+
+STATIC void
+xfs_destroy_zones(void)
+{
+	kmem_zone_destroy(xfs_inode_zone);
+	kmem_zone_destroy(xfs_ifork_zone);
+	kmem_zone_destroy(xfs_da_state_zone);
+	kmem_zone_destroy(xfs_btree_cur_zone);
+	kmem_zone_destroy(xfs_bmap_free_item_zone);
+
+}
+
 int xfs_fs_init()
+{
+	int			error;
+
+	xfs_dir_startup();
+
+	error = xfs_init_zones();
+	if (error)
+		goto out;
+
+	error = xfs_buf_init();
+	if (error)
+		goto out_filestream_uninit;
+
+	return 0;
+
+ out_qm_exit:
+ out_sysctl_unregister:
+ out_cleanup_procfs:
+ out_buf_terminate:
+	xfs_buf_terminate();
+ out_filestream_uninit:
+ out_mru_cache_uninit:
+ out_destroy_wq:
+ out_destroy_zones:
+	xfs_destroy_zones();
+ out:
+	return error;
+
+}
+
+int xfs_fs_exit()
+{
+	xfs_buf_terminate();
+	xfs_destroy_zones();
+	return 0;
+}
+
+int xfs_mount_init( struct xfs_mount **mpp)
 {
 	struct inode		*root;
 	struct xfs_mount	*mp = NULL;
@@ -148,6 +280,11 @@ int xfs_fs_init()
 	error = xfs_mountfs(mp);
 	if ( error)
 		goto out_free_sb;
+
+	*mpp = mp;
+
+	return 0;
+
  out_free_sb:
 	xfs_freesb(mp);
  out_free_mp:

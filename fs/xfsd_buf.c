@@ -793,3 +793,9 @@ xfs_buf_init(void)
 		return -ENOMEM;
 	return 0;
 }
+
+void
+xfs_buf_terminate(void)
+{
+	kmem_zone_destroy(xfs_buf_zone);
+}
