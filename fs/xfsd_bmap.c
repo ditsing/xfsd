@@ -1868,30 +1868,6 @@ xfs_bmapi_read(
 }
 
 /*
- * Some allocation requests often come in with little stack to work on. Push
- * them off to a worker thread so there is lots of stack to use. Otherwise just
- * call directly to avoid the context switch overhead here.
- */
-int
-xfs_bmapi_allocate(
-	struct xfs_bmalloca	*args)
-{
-	/*
-	DECLARE_COMPLETION_ONSTACK(done);
-
-	if (!args->stack_switch)
-		return __xfs_bmapi_allocate(args);
-
-
-	args->done = &done;
-	INIT_WORK_ONSTACK(&args->work, xfs_bmapi_allocate_worker);
-	queue_work(xfs_alloc_wq, &args->work);
-	wait_for_completion(&done);
-	*/
-	return args->result;
-}
-
-/*
  * returns 1 for success, 0 if we failed to map the extent.
  */
 STATIC int

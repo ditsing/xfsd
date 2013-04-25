@@ -57,10 +57,16 @@ xfs_inode_alloc(
 	ip = kmem_zone_alloc(xfs_inode_zone, KM_SLEEP);
 	if (!ip)
 		return NULL;
+	/*
+	 * Comment out.
+	 * Wo do not use kernel inode.
+	 */
+	/*
 	if (inode_init_always(mp->m_super, VFS_I(ip))) {
 		kmem_zone_free(xfs_inode_zone, ip);
 		return NULL;
 	}
+	*/
 
 	ASSERT(atomic_read(&ip->i_pincount) == 0);
 	ASSERT(!spin_is_locked(&ip->i_flags_lock));
@@ -107,11 +113,17 @@ xfs_inode_free(
 	if (ip->i_afp)
 		xfs_idestroy_fork(ip, XFS_ATTR_FORK);
 
+	/*
+	 * Comment out.
+	 * Could be no item on any inode.
+	 */
+	/*
 	if (ip->i_itemp) {
 		ASSERT(!(ip->i_itemp->ili_item.li_flags & XFS_LI_IN_AIL));
 		xfs_inode_item_destroy(ip);
 		ip->i_itemp = NULL;
 	}
+	*/
 
 	/* asserts to verify all state is correct here */
 	ASSERT(atomic_read(&ip->i_pincount) == 0);

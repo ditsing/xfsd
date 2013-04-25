@@ -115,7 +115,13 @@ _xfs_buf_alloc(
 
 	atomic_set(&bp->b_hold, 1);
 	atomic_set(&bp->b_lru_ref, 1);
+	/*
+	 * Comment out.
+	 * Do not use completion.
+	 */
+	/*
 	init_completion(&bp->b_iowait);
+	*/
 	INIT_LIST_HEAD(&bp->b_lru);
 	INIT_LIST_HEAD(&bp->b_list);
 	RB_CLEAR_NODE(&bp->b_rbnode);
@@ -145,7 +151,13 @@ _xfs_buf_alloc(
 	bp->b_io_length = bp->b_length;
 
 	atomic_set(&bp->b_pin_count, 0);
+	/*
+	 * Comment out.
+	 * No worker queue.
+	 */
+	/*
 	init_waitqueue_head(&bp->b_waiters);
+	*/
 
 	XFS_STATS_INC(xb_create);
 	trace_xfs_buf_init(bp, _RET_IP_);

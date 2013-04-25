@@ -154,11 +154,4 @@ void sort(void *base, size_t num, size_t size,
 #define BTOBB(bytes)	(((__u64)(bytes) + BBSIZE - 1) >> BBSHIFT)
 #define BTOBBT(bytes)	((__u64)(bytes) >> BBSHIFT)
 #define BBTOB(bbs)	((bbs) << BBSHIFT)
-
-#define init_completion(x)
-#define init_waitqueue_head(x)
-#define INIT_DELAYED_WORK(x,y)
-struct xfs_inode;
-static inline void xfs_inode_item_destroy(struct xfs_inode *x){}
-#define inode_init_always(x,y) 	 		1
 #endif
