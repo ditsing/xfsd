@@ -21,7 +21,7 @@ int main()
 
 	get_sb_magic( magic);
 	printf("sb_magic \t\t\t%s\n", magic);
-	printf("disk sb_magic int \t\t%u\n", get_dsb_magic_int());
+	printf("disk sb_magic int \t\t%u\n", get_sb_magic_int());
 	printf("sbs count \t\t\t%d\n", get_sbs_count());
 	printf("disk sb size \t\t\t%d\n", get_dsb_size());
 	printf("sb size \t\t\t%d\n", get_sb_size());

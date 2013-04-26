@@ -4,7 +4,7 @@
 struct xfs_sb;
 int read_super_init( struct xfs_sb *sbp);
 void get_sb_magic( char *);
-unsigned int get_dsb_magic_int();
+unsigned int get_sb_magic_int();
 int get_sbs_count();
 int get_dsb_size();
 int get_sb_size();

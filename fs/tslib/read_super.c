@@ -15,7 +15,6 @@
 #include "xfs/xfs_bmap_btree.h"
 #include "xfs/xfs_btree.h"
 
-static xfs_dsb_t dsb;
 xfs_sb_t sb;
 static xfs_agf_t agf;
 static xfs_agi_t agi;
@@ -53,9 +52,9 @@ void get_sb_magic( char * magic)
 	mem_cpy( magic, cur, 4);
 }
 
-unsigned int get_dsb_magic_int()
+unsigned int get_sb_magic_int()
 {
-	return dsb.sb_magicnum;
+	return sb.sb_magicnum;
 }
 
 int get_sbs_count()
