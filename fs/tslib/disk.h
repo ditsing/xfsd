@@ -2,7 +2,7 @@
 #define __TSLIB_DISK_H__
 
 // Always consider block size as 512 bytes.
-#define BLK_SIZE 512
+#define BLK_SIZE (512)
 
 #ifdef WIN32
 #else

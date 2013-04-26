@@ -799,3 +799,63 @@ xfs_buf_terminate(void)
 {
 	kmem_zone_destroy(xfs_buf_zone);
 }
+
+STATIC int
+xfs_setsize_buftarg_flags(
+	xfs_buftarg_t		*btp,
+	unsigned int		blocksize,
+	unsigned int		sectorsize,
+	int			verbose)
+{
+	btp->bt_bsize = blocksize;
+	btp->bt_sshift = ffs(sectorsize) - 1;
+	btp->bt_smask = sectorsize - 1;
+	return 0;
+}
+
+/*
+ *	When allocating the initial buffer target we have not yet
+ *	read in the superblock, so don't know what sized sectors
+ *	are being used is at this early stage.  Play safe.
+ */
+STATIC int
+xfs_setsize_buftarg_early(
+	xfs_buftarg_t		*btp,
+	struct block_device	*bdev)
+{
+	return xfs_setsize_buftarg_flags(btp,
+			PAGE_SIZE, bdev_logical_block_size(bdev), 0);
+}
+
+int
+xfs_setsize_buftarg(
+	xfs_buftarg_t		*btp,
+	unsigned int		blocksize,
+	unsigned int		sectorsize)
+{
+	return xfs_setsize_buftarg_flags(btp, blocksize, sectorsize, 1);
+}
+
+xfs_buftarg_t *
+xfs_alloc_buftarg(
+	struct xfs_mount	*mp,
+	struct block_device	*bdev,
+	int			external,
+	const char		*fsname)
+{
+	xfs_buftarg_t		*btp;
+
+	btp = kmem_zalloc(sizeof(*btp), KM_SLEEP);
+
+	btp->bt_mount = mp;
+
+	INIT_LIST_HEAD(&btp->bt_lru);
+	spin_lock_init(&btp->bt_lru_lock);
+	if (xfs_setsize_buftarg_early(btp, bdev))
+		goto error;
+	return btp;
+
+error:
+	kmem_free(btp);
+	return NULL;
+}

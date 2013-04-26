@@ -195,7 +195,12 @@ typedef __s64 			__TSLIB_(int64_t);
 /*
  * Fake container_of, used in xfs_inode.h
  */
-#define container_of( ptr, type, member) 0
+#ifndef WIN32
+#define container_of(ptr, type, member) ({		      \
+	const typeof(((type *)0)->member)*__mptr = (ptr);    \
+	(type *)((char *)__mptr - offsetof(type, member)); })
+#endif
+
 
 /*
  * Copied from linux/types.h, used in xfs_inode.h

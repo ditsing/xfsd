@@ -57,7 +57,7 @@ static unsigned long height_to_maxindex[RADIX_TREE_MAX_PATH];
  */
 
 #define radix_tree_node_alloc(r) 	((struct radix_tree_node *) \
-		kmem_zalloc(1, sizeof(struct radix_tree_node)))
+		kmem_zalloc(sizeof(struct radix_tree_node), KM_NOSLEEP))
 #define radix_tree_node_free(n) 	kmem_free(n)
 
 #ifdef RADIX_TREE_TAGS
@@ -229,6 +229,9 @@ static inline void **__lookup_slot(struct radix_tree_root *root,
 {
 	unsigned int height, shift;
 	struct radix_tree_node **slot;
+
+	if ( root->rnode == NULL)
+		return NULL;
 
 	height = root->height;
 	if (index > radix_tree_maxindex(height))

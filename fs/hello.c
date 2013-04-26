@@ -1,15 +1,23 @@
 #include <stdio.h>
 #include <memory.h>
+#include "tslib/tslib.h"
 #include "tslib/read_super.h"
 #include "tslib/read_file.h"
 
 int main()
 {
 	char magic[100] = { 0};
+	/*
 	int ret;
 	char tmp[10000];
 	char *cur;
-	init();
+	*/
+	if ( tslib_init())
+	{
+		printf("INIT ERROR!\n");
+		return 0;
+	}
+	read_super_init( tslib_get_sb());
 
 	get_sb_magic( magic);
 	printf("sb_magic \t\t\t%s\n", magic);
@@ -30,6 +38,7 @@ int main()
 	printf("agf free block 3 \t\t%d\n", get_agf_free_block( 2));
 	printf("agf free block 4 \t\t%d\n", get_agf_free_block( 3));
 
+	/*
 	print("Begin to read disk\n");
 	init_read_file_from_disk();
 	ret = read_file_from_disk( "/xfsd_types.h", tmp, 10000);
@@ -53,5 +62,6 @@ int main()
 	}
 	*cur++ = '\0';
 	printf("returned:\n%s\n", tmp);
+	*/
 	return 0;
 }

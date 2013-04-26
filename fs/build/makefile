@@ -1,10 +1,9 @@
 vpath % .. ../tslib ../xfs ../linux
-CFLAGS = -I ../ -g
+CFLAGS = -I ../ -g -Wall
 CC = gcc
 OBJS = read_super.o		\
        syscall.o		\
        rbtree.o			\
-       read_file.o		\
        xfsd_dir2_sf.o		\
        xfsd_bmap_btree.o	\
        xfsd_dir2_node.o		\
@@ -36,7 +35,9 @@ OBJS = read_super.o		\
        disk.o 			\
        rwsem.o 			\
        xfsd_icache.o 		\
-       xfsd_uuid.o
+       xfsd_uuid.o 		\
+       tslib.o
+#       read_file.o		\
 	
 
 hello: hello.c $(OBJS)

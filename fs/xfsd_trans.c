@@ -21,6 +21,7 @@ xfs_trans_brelse(xfs_trans_t	*tp,
 	{
 		int y = 0;
 		int x = 9 / y;
+		++x;
 	}
 }
 
@@ -56,6 +57,7 @@ xfs_trans_read_buf_map(
 		*bpp = bp;
 		return 0;
 	}
+	return 1;
 
 }
 
@@ -67,9 +69,8 @@ xfs_trans_get_buf_map(
 	int			nmaps,
 	xfs_buf_flags_t		flags)
 {
-	xfs_buf_t		*bp;
-
 	if (!tp)
 		return xfs_buf_get_map(target, map, nmaps, flags);
+	return NULL;
 }
 

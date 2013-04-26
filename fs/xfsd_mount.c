@@ -932,9 +932,6 @@ xfs_mountfs(
 {
 	xfs_sb_t	*sbp = &(mp->m_sb);
 	xfs_inode_t	*rip;
-	__uint64_t	resblks;
-	uint		quotamount = 0;
-	uint		quotaflags = 0;
 	int		error = 0;
 
 	xfs_mount_common(mp, sbp);
@@ -992,6 +989,10 @@ xfs_mountfs(
 	xfs_ialloc_compute_maxlevels(mp);
 
 	xfs_set_maxicount(mp);
+
+	error = xfs_uuid_mount(mp);
+	if (error)
+		goto out;
 
 	/*
 	 * Set the minimum read and write sizes
@@ -1053,7 +1054,7 @@ xfs_mountfs(
 		goto out_free_perag;
 	}
 
-	error = !( mp->m_flags & XFS_MOUNT_NORECOVERY);
+	error = mp->m_flags & XFS_MOUNT_NORECOVERY;
 	if (error) {
 		xfs_warn(mp, "log mount failed");
 		goto out_fail_wait;
@@ -1129,7 +1130,7 @@ void
 xfs_unmountfs(
 	struct xfs_mount	*mp)
 {
-	IRELE(mp->m_rootip);
+	xfs_iput(mp->m_rootip);
 
 	xfs_uuid_unmount(mp);
 
@@ -1160,13 +1161,7 @@ xfs_readsb(xfs_mount_t *mp, int flags)
 	 * This will be kept around at all times to optimize
 	 * access to the superblock.
 	 */
-	/*
-	 * Don't know any disk.
-	 */
-	/*
 	sector_size = xfs_getsize_buftarg(mp->m_ddev_targp);
-	*/
-	sector_size = mp->m_sb.sb_sectsize;
 
 reread:
 	bp = xfs_buf_read_uncached(mp->m_ddev_targp, XFS_SB_DADDR,

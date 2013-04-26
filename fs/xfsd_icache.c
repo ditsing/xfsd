@@ -159,7 +159,6 @@ xfs_iget(
 {
 	struct xfs_inode	*ip;
 	int			error;
-	xfs_agino_t		agino = XFS_INO_TO_AGINO(mp, ino);
 	int			iflags;
 
 	ip = xfs_inode_alloc(mp, ino);

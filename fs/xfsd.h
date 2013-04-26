@@ -137,8 +137,10 @@ void sort(void *base, size_t num, size_t size,
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_CACHE_SIZE	(1UL << PAGE_CACHE_SHIFT)
 
-#define radix_tree_preload(mask) 		1
-#define radix_tree_preload_end(mask) 		1
+#define radix_tree_preload(mask) 		0
+#define radix_tree_preload_end(mask)
+#define smp_mb()
+#define wake_up_bit(x,y)
 
 /*
  * Copied from xfs_fs.h
@@ -154,6 +156,10 @@ void sort(void *base, size_t num, size_t size,
 #define BTOBB(bytes)	(((__u64)(bytes) + BBSIZE - 1) >> BBSHIFT)
 #define BTOBBT(bytes)	((__u64)(bytes) >> BBSHIFT)
 #define BBTOB(bbs)	((bbs) << BBSHIFT)
+
+#include "tslib/disk.h"
+#define block_size(x) BLK_SIZE
+#define bdev_logical_block_size(x) BLK_SIZE
 
 struct xfs_mount;
 int xfs_fs_init();

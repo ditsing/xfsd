@@ -179,11 +179,5 @@ static inline __u64 roundup( __u64 x, __u64 y)
 		(((x) + (__y - 1)) / __y) * __y; 		\
 } 								\
 )
-#define rounddown( x, y) ( 					\
-{ 								\
-		const auto __x = x; 	 			\
-		__x - (__x % (y)); 				\
-} 								\
-)
 #endif
 #endif

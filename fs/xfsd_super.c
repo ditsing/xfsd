@@ -185,14 +185,7 @@ xfs_init_zones(void)
 
 	return 0;
 
- out_destroy_inode_zone:
-	kmem_zone_destroy(xfs_inode_zone);
  out_destroy_efi_zone:
- out_destroy_efd_zone:
- out_destroy_buf_item_zone:
- out_destroy_log_item_desc_zone:
- out_destroy_trans_zone:
- out_destroy_ifork_zone:
 	kmem_zone_destroy(xfs_ifork_zone);
  out_destroy_da_state_zone:
 	kmem_zone_destroy(xfs_da_state_zone);
@@ -201,7 +194,6 @@ xfs_init_zones(void)
  out_destroy_bmap_free_item_zone:
 	kmem_zone_destroy(xfs_bmap_free_item_zone);
  out_destroy_log_ticket_zone:
- out:
 	return -ENOMEM;
 }
 
@@ -232,15 +224,7 @@ int xfs_fs_init()
 
 	return 0;
 
- out_qm_exit:
- out_sysctl_unregister:
- out_cleanup_procfs:
- out_buf_terminate:
-	xfs_buf_terminate();
  out_filestream_uninit:
- out_mru_cache_uninit:
- out_destroy_wq:
- out_destroy_zones:
 	xfs_destroy_zones();
  out:
 	return error;
@@ -265,7 +249,6 @@ xfs_free_fsname(
 
 int xfs_mount( struct xfs_mount **mpp)
 {
-	struct inode		*root;
 	struct xfs_mount	*mp = NULL;
 	int			flags = 0, error = ENOMEM;
 
@@ -278,6 +261,8 @@ int xfs_mount( struct xfs_mount **mpp)
 	atomic_set(&mp->m_active_trans, 0);
 
 	mp->m_super = NULL;
+
+	mp->m_ddev_targp = xfs_alloc_buftarg(mp, NULL, 0, mp->m_fsname);
 
 	error = xfs_readsb(mp, flags);
 	if (error)
@@ -306,7 +291,7 @@ int xfs_mount( struct xfs_mount **mpp)
 int xfs_unmount( struct xfs_mount **mpp)
 {
 	struct xfs_mount	*mp = *mpp;
-	xfs_umountfs(mp);
+	xfs_unmountfs(mp);
 	xfs_freesb(mp);
 	xfs_free_fsname(mp);
 	return 0;

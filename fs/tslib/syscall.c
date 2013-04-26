@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "tslib.h"
+#define __IN_TSLIB__
 #include "syscall.h"
 
 static FILE *file;
@@ -57,6 +57,11 @@ void *mem_move( void *dst, const void *src, int n)
 void *mem_set( void *s, int c, long n)
 {
 	return memset( s, c, n);
+}
+
+int mem_cmp( const void *s1, const void *s2, size_t n)
+{
+	return memcmp( s1, s2, n);
 }
 
 long str_len( const char *str)

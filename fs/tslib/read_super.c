@@ -32,7 +32,7 @@ int read_block( int offset, void *mem, int nmeb)
 	return read_file( mem, sb.sb_blocksize, nmeb);
 }
 
-int init( struct xfs_sb *sbp)
+int read_super_init( struct xfs_sb *sbp)
 {
 	sb = *sbp;
 
@@ -122,12 +122,12 @@ int get_sb_ifree()
 	return sb.sb_ifree;
 }
 
-xfs_ino_t get_sb_rootino()
+__uint64_t get_sb_rootino()
 {
 	return sb.sb_rootino;
 }
 
-xfs_daddr_t get_agi_root()
+__uint64_t get_agi_root()
 {
 	return ( xfs_daddr_t)be32_to_cpu( agi.agi_root);
 }

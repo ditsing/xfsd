@@ -11,6 +11,7 @@ int seek_file_end( long offset);
 void *mem_set( void *s, int c, long n);
 void *mem_cpy( void *dst, const void *src, int n);
 void *mem_move( void *dst, const void *src, int n);
+int mem_cmp( const void *s1, const void *s2, size_t n);
 long str_len( const char *str);
 int str_ncmp( const char *s1, const char *s2, long n);
 int read_file_length( void *ptr, long offset, int size, int nmemb);
@@ -28,6 +29,7 @@ void *mem_realloc( void *p, size_t size);
 #define memcpy mem_cpy
 #define memmove mem_move
 #define memset mem_set
+#define memcmp mem_cmp
 #define strlen str_len
 
 #endif

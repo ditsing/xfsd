@@ -1,25 +1,31 @@
 #include "tslib/tslib.h"
 #include "xfsd.h"
 
+#include "xfsd_types.h"
+#include "xfs/xfs_types.h"
+#include "xfs/xfs_sb.h"
 #include "xfs/xfs_mount.h"
 
-#include "xfs/xfs_sb.h"
+#include "radix-tree.h"
+
 
 xfs_mount_t *mount;
 
 int tslib_init()
 {
+	radix_tree_init();
+
 	int error;
 	error = xfs_fs_init();
 	if ( error)
 	{
-		goto out_fs;
+		goto out;
 	}
 
 	error = open_file( "disk/xfs.lib", "r");
 	if ( error)
 	{
-		goto out;
+		goto out_fs;
 	}
 
 	error = xfs_mount( &mount);
@@ -37,3 +43,7 @@ int tslib_init()
 	return error;
 }
 
+xfs_sb_t *tslib_get_sb()
+{
+	return &(mount->m_sb);
+}
