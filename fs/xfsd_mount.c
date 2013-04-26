@@ -1125,6 +1125,20 @@ xfs_mountfs(
 	return error;
 }
 
+void
+xfs_unmountfs(
+	struct xfs_mount	*mp)
+{
+	IRELE(mp->m_rootip);
+
+	xfs_uuid_unmount(mp);
+
+#if defined(DEBUG)
+	xfs_errortag_clearall(mp, 0);
+#endif
+	xfs_free_perag(mp);
+}
+
 /*
  * xfs_readsb
  *

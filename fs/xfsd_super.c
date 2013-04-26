@@ -254,7 +254,16 @@ int xfs_fs_exit()
 	return 0;
 }
 
-int xfs_mount_init( struct xfs_mount **mpp)
+STATIC void
+xfs_free_fsname(
+	struct xfs_mount	*mp)
+{
+	kfree(mp->m_fsname);
+	kfree(mp->m_rtname);
+	kfree(mp->m_logname);
+}
+
+int xfs_mount( struct xfs_mount **mpp)
 {
 	struct inode		*root;
 	struct xfs_mount	*mp = NULL;
@@ -288,7 +297,17 @@ int xfs_mount_init( struct xfs_mount **mpp)
  out_free_sb:
 	xfs_freesb(mp);
  out_free_mp:
+	xfs_free_fsname(mp);
 	kfree(mp);
  out:
 	return -error;
+}
+
+int xfs_unmount( struct xfs_mount **mpp)
+{
+	struct xfs_mount	*mp = *mpp;
+	xfs_umountfs(mp);
+	xfs_freesb(mp);
+	xfs_free_fsname(mp);
+	return 0;
 }

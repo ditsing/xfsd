@@ -32,27 +32,18 @@ int read_block( int offset, void *mem, int nmeb)
 	return read_file( mem, sb.sb_blocksize, nmeb);
 }
 
-int init()
+int init( struct xfs_sb *sbp)
 {
-	if ( open_file( "disk/xfs.lib", "r"))
-	{
-		return -1;
-	}
-	else
-	{
-		seek_file_set( 0);
-		read_file( ( void *) &dsb, sizeof( sb), 1);
-		xfs_sb_from_disk( &sb, &dsb);
+	sb = *sbp;
 
-		seek_file_set( sb.sb_sectsize);
-		read_file( ( void *)&agf, sizeof( agf), 1);
+	seek_file_set( sb.sb_sectsize);
+	read_file( ( void *)&agf, sizeof( agf), 1);
 
-		seek_file_set( sb.sb_sectsize * 2);
-		read_file( ( void *)&agi, sizeof( agi), 1);
+	seek_file_set( sb.sb_sectsize * 2);
+	read_file( ( void *)&agi, sizeof( agi), 1);
 
-		seek_file_set( sb.sb_sectsize * 3);
-		read_file( ( void *)agfl, sizeof( xfs_agfl_t), be32_to_cpu( agf.agf_flcount));
-	}
+	seek_file_set( sb.sb_sectsize * 3);
+	read_file( ( void *)agfl, sizeof( xfs_agfl_t), be32_to_cpu( agf.agf_flcount));
 	return 0;
 }
 

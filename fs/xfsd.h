@@ -154,4 +154,10 @@ void sort(void *base, size_t num, size_t size,
 #define BTOBB(bytes)	(((__u64)(bytes) + BBSIZE - 1) >> BBSHIFT)
 #define BTOBBT(bytes)	((__u64)(bytes) >> BBSHIFT)
 #define BBTOB(bbs)	((bbs) << BBSHIFT)
+
+struct xfs_mount;
+int xfs_fs_init();
+int xfs_fs_exit();
+int xfs_mount( struct xfs_mount **mpp);
+int xfs_unmount( struct xfs_mount **mpp);
 #endif
