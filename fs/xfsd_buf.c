@@ -182,11 +182,6 @@ xfs_buf_allocate_memory(
 	uint			flags)
 {
 	size_t			size;
-	size_t			nbytes, offset;
-	gfp_t			gfp_mask = xb_to_gfp(flags);
-	unsigned short		page_count, i;
-	xfs_off_t		start, end;
-	int			error;
 
 	/*
 	 * for buffers that are contained within a single page, just allocate
@@ -195,6 +190,10 @@ xfs_buf_allocate_memory(
 	 */
 	size = BBTOB(bp->b_length);
 	bp->b_addr = kmem_alloc(size, KM_NOFS);
+	if ( !bp->b_addr)
+	{
+		return -ENOMEM;
+	}
 	bp->b_offset = 0;
 	bp->b_flags |= _XBF_KMEM;
 	return 0;
@@ -496,8 +495,7 @@ xfs_buf_get_uncached(
 	size_t			numblks,
 	int			flags)
 {
-	unsigned long		page_count;
-	int			error, i;
+	int			error;
 	struct xfs_buf		*bp;
 	DEFINE_SINGLE_BUF_MAP(map, XFS_BUF_DADDR_NULL, numblks);
 
@@ -698,6 +696,7 @@ _xfs_buf_ioapply(
 	} else if (bp->b_flags & XBF_READ_AHEAD) {
 	} else {
 	}
+	rw = 0;
 
 	/*
 	 * Walk all the vectors issuing IO on them. Set up the initial offset
