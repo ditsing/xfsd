@@ -7,8 +7,8 @@ void *mem_move( void *dst, const void *src, size_t n);
 int mem_cmp( const void *s1, const void *s2, size_t n);
 long str_len( const char *str);
 int str_ncmp( const char *s1, const char *s2, long n);
-int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb);
 int print( const char *format, ...);
+int eprint( const char *format, ...);
 
 void *mem_alloc( size_t size);
 void *mem_zalloc( size_t size);

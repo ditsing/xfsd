@@ -49,4 +49,10 @@ int tslib_read_disk_block( long long block, void *data, int bytes)
 	return read_disk_file( data, bytes, 1) != 1;
 }
 
+int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
+{
+	seek_disk_file_set( offset);
+	return read_disk_file( ptr, size, nmemb);
+}
+
 #endif

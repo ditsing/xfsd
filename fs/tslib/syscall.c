@@ -36,12 +36,6 @@ int str_ncmp( const char *s1, const char *s2, long n)
 	return strncmp( s1, s2, n);
 }
 
-int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
-{
-	seek_disk_file_set( offset);
-	return read_disk_file( ptr, size, nmemb);
-}
-
 int print( const char *format, ...)
 {
 	va_list arg;
