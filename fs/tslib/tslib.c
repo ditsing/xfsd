@@ -7,6 +7,7 @@
 #include "xfs/xfs_mount.h"
 
 #include "radix-tree.h"
+#include "read_file2.h"
 
 
 xfs_mount_t *mount;
@@ -14,6 +15,7 @@ xfs_mount_t *mount;
 int tslib_init()
 {
 	radix_tree_init();
+	tslib_file_init();
 
 	int error;
 	error = xfs_fs_init();
@@ -22,7 +24,7 @@ int tslib_init()
 		goto out;
 	}
 
-	error = open_file( "disk/xfs.lib", "r");
+	error = open_disk_file( "disk/xfs.lib", "r");
 	if ( error)
 	{
 		goto out_fs;

@@ -23,26 +23,26 @@ static xfs_agfl_t agfl[10];
 int read_block( int offset, void *mem, int nmeb)
 {
 	// Here is a bug: we cannot seek files larger that 2GB.
-	if (  ( seek_file_set( offset * ( long) sb.sb_blocksize)) == -1)
+	if (  ( seek_disk_file_set( offset * ( long) sb.sb_blocksize)) == -1)
 	{
 		return -1;
 	}
 
-	return read_file( mem, sb.sb_blocksize, nmeb);
+	return read_disk_file( mem, sb.sb_blocksize, nmeb);
 }
 
 int read_super_init( struct xfs_sb *sbp)
 {
 	sb = *sbp;
 
-	seek_file_set( sb.sb_sectsize);
-	read_file( ( void *)&agf, sizeof( agf), 1);
+	seek_disk_file_set( sb.sb_sectsize);
+	read_disk_file( ( void *)&agf, sizeof( agf), 1);
 
-	seek_file_set( sb.sb_sectsize * 2);
-	read_file( ( void *)&agi, sizeof( agi), 1);
+	seek_disk_file_set( sb.sb_sectsize * 2);
+	read_disk_file( ( void *)&agi, sizeof( agi), 1);
 
-	seek_file_set( sb.sb_sectsize * 3);
-	read_file( ( void *)agfl, sizeof( xfs_agfl_t), be32_to_cpu( agf.agf_flcount));
+	seek_disk_file_set( sb.sb_sectsize * 3);
+	read_disk_file( ( void *)agfl, sizeof( xfs_agfl_t), be32_to_cpu( agf.agf_flcount));
 	return 0;
 }
 

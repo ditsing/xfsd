@@ -36,8 +36,8 @@ OBJS = read_super.o		\
        rwsem.o 			\
        xfsd_icache.o 		\
        xfsd_uuid.o 		\
-       tslib.o
-#       read_file.o		\
+       tslib.o 			\
+       read_file2.o		
 	
 
 hello: hello.c $(OBJS)

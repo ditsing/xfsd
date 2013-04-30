@@ -2,16 +2,14 @@
 #include <memory.h>
 #include "tslib/tslib.h"
 #include "tslib/read_super.h"
-#include "tslib/read_file.h"
+#include "tslib/read_file2.h"
 
 int main()
 {
 	char magic[100] = { 0};
-	/*
 	int ret;
 	char tmp[10000];
-	char *cur;
-	*/
+	tslib_file_p fp;
 	if ( tslib_init())
 	{
 		printf("INIT ERROR!\n");
@@ -38,30 +36,31 @@ int main()
 	printf("agf free block 3 \t\t%d\n", get_agf_free_block( 2));
 	printf("agf free block 4 \t\t%d\n", get_agf_free_block( 3));
 
-	/*
-	print("Begin to read disk\n");
-	init_read_file_from_disk();
-	ret = read_file_from_disk( "/xfsd_types.h", tmp, 10000);
-	printf("%s\n\n\n\n", tmp);
-	printf("return %d\n", ret);
+	printf("Begin to read disk\n");
+	fp = open_file2("xfsd_types.h");
+	if ( fp)
+	{
+		ret = read_file2( fp, tmp, 10000);
+		printf("%s\n\n\n\n", tmp);
+		printf("return %d\n", ret);
+	}
+	else
+	{
+		printf("Got nothing!\n");
+	}
 
 	memset( tmp, 0, sizeof( tmp));
-	ret = read_file_from_disk( "/xfsd/xfsd.h", tmp, 10000);
-	printf("return %d\n", ret);
-	printf("%s\n\n\n\n", tmp);
-
-	ret = list_file( "/", tmp);
-	cur = tmp;
-	while ( ret--)
+	fp = open_file2("/xfsd/xfsd.h");
+	if ( fp)
 	{
-		while ( *cur)
-		{
-			++cur;
-		}
-		*cur++ = '\n';
+		ret = read_file2( fp, tmp, 10000);
+		printf("return %d\n", ret);
+		printf("%s\n\n\n\n", tmp);
 	}
-	*cur++ = '\0';
-	printf("returned:\n%s\n", tmp);
-	*/
+	else
+	{
+		printf("Got nothing!\n");
+	}
+
 	return 0;
 }

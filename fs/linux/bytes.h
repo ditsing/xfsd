@@ -120,27 +120,98 @@ static inline __u8 ror8(__u8 word, unsigned int shift)
 
 static inline int fls64( __u64 x)
 {
-	int ret = 0;
-	if ( x)
-	{
-		while ( !( x & 1))
-		{
-			++ret;
-			x >>= 1;
-		}
+	int r = 0;
+
+	if (!x)
+		return 0;
+	if (!(x >> 32)) {
+		x <<= 32;
+		r += 32;
 	}
-
-	return ret;
-}
-
-static inline int fls_long( __u32 x)
-{
-	return fls64( x);
+	if (!(x >> 48)) {
+		x <<= 16;
+		r += 16;
+	}
+	if (!(x >> 56)) {
+		x <<= 8;
+		r += 8;
+	}
+	if (!(x >> 60)) {
+		x <<= 4;
+		r += 4;
+	}
+	if (!(x >> 62)) {
+		x <<= 2;
+		r += 2;
+	}
+	if (!(x >> 63)) {
+		x <<= 1;
+		r += 1;
+	}
+	return r;
 }
 
 static inline int fls( __u32 x)
 {
-	return fls_long( x);
+	int r = 32;
+
+	if (!x)
+		return 0;
+	if (!(x & 0xffff0000u)) {
+		x <<= 16;
+		r -= 16;
+	}
+	if (!(x & 0xff000000u)) {
+		x <<= 8;
+		r -= 8;
+	}
+	if (!(x & 0xf0000000u)) {
+		x <<= 4;
+		r -= 4;
+	}
+	if (!(x & 0xc0000000u)) {
+		x <<= 2;
+		r -= 2;
+	}
+	if (!(x & 0x80000000u)) {
+		x <<= 1;
+		r -= 1;
+	}
+	return r;
+}
+
+static inline int fls_long( __u32 x)
+{
+	return fls( x);
+}
+
+static inline int ffs(int x)
+{
+	int r = 1;
+
+	if (!x)
+		return 0;
+	if (!(x & 0xffff)) {
+		x >>= 16;
+		r += 16;
+	}
+	if (!(x & 0xff)) {
+		x >>= 8;
+		r += 8;
+	}
+	if (!(x & 0xf)) {
+		x >>= 4;
+		r += 4;
+	}
+	if (!(x & 3)) {
+		x >>= 2;
+		r += 2;
+	}
+	if (!(x & 1)) {
+		x >>= 1;
+		r += 1;
+	}
+	return r;
 }
 
 #endif

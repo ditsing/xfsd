@@ -673,7 +673,7 @@ xfs_buf_ioapply_map(
 	*count -= size;
 	*buf_offset += size;
 
-	bp->b_error = tslib_read_disk( bp->b_maps[map].bm_bn, bp->b_addr + offset, size);
+	bp->b_error = tslib_read_disk_block( bp->b_maps[map].bm_bn, bp->b_addr + offset, size);
 }
 
 STATIC void

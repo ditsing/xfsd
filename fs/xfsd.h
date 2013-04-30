@@ -127,6 +127,8 @@ void sort(void *base, size_t num, size_t size,
  * From kernel.h
  */
 #define ULONG_MAX (~0UL)
+#define LONG_MAX ((long)(~0UL>>1))
+
 
 /*
  * Copied from linux/pagemap.h, used in xfs_mount.h.
