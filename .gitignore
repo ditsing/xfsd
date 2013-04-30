@@ -1,1 +1,6 @@
 .UI
+objchk_wxp_x86/
+*.log
+*.suo
+*.err
+*wrn
