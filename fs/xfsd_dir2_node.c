@@ -39,24 +39,11 @@
 /*
  * Function declarations.
  */
-static int xfs_dir2_leafn_add(struct xfs_buf *bp, xfs_da_args_t *args,
-			      int index);
 #ifdef DEBUG
 static void xfs_dir2_leafn_check(struct xfs_inode *dp, struct xfs_buf *bp);
 #else
 #define	xfs_dir2_leafn_check(dp, bp)
 #endif
-static void xfs_dir2_leafn_moveents(xfs_da_args_t *args, struct xfs_buf *bp_s,
-				    int start_s, struct xfs_buf *bp_d,
-				    int start_d, int count);
-static void xfs_dir2_leafn_rebalance(xfs_da_state_t *state,
-				     xfs_da_state_blk_t *blk1,
-				     xfs_da_state_blk_t *blk2);
-static int xfs_dir2_leafn_remove(xfs_da_args_t *args, struct xfs_buf *bp,
-				 int index, xfs_da_state_blk_t *dblk,
-				 int *rval);
-static int xfs_dir2_node_addname_int(xfs_da_args_t *args,
-				     xfs_da_state_blk_t *fblk);
 
 static void
 xfs_dir2_free_verify(

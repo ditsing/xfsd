@@ -41,8 +41,6 @@
  */
 static int xfs_dir2_block_lookup_int(xfs_da_args_t *args, struct xfs_buf **bpp,
 				     int *entno);
-static int xfs_dir2_block_sort(const void *a, const void *b);
-
 static xfs_dahash_t xfs_dir_hash_dot, xfs_dir_hash_dotdot;
 
 /*
@@ -101,112 +99,6 @@ xfs_dir2_block_read(
 
 	return xfs_da_read_buf(tp, dp, mp->m_dirdatablk, -1, bpp,
 				XFS_DATA_FORK, &xfs_dir2_block_buf_ops);
-}
-
-static void
-xfs_dir2_block_need_space(
-	struct xfs_dir2_data_hdr	*hdr,
-	struct xfs_dir2_block_tail	*btp,
-	struct xfs_dir2_leaf_entry	*blp,
-	__be16				**tagpp,
-	struct xfs_dir2_data_unused	**dupp,
-	struct xfs_dir2_data_unused	**enddupp,
-	int				*compact,
-	int				len)
-{
-	struct xfs_dir2_data_free	*bf;
-	__be16				*tagp = NULL;
-	struct xfs_dir2_data_unused	*dup = NULL;
-	struct xfs_dir2_data_unused	*enddup = NULL;
-
-	*compact = 0;
-	bf = hdr->bestfree;
-
-	/*
-	 * If there are stale entries we'll use one for the leaf.
-	 */
-	if (btp->stale) {
-		if (be16_to_cpu(bf[0].length) >= len) {
-			/*
-			 * The biggest entry enough to avoid compaction.
-			 */
-			dup = (xfs_dir2_data_unused_t *)
-			      ((char *)hdr + be16_to_cpu(bf[0].offset));
-			goto out;
-		}
-
-		/*
-		 * Will need to compact to make this work.
-		 * Tag just before the first leaf entry.
-		 */
-		*compact = 1;
-		tagp = (__be16 *)blp - 1;
-
-		/* Data object just before the first leaf entry.  */
-		dup = (xfs_dir2_data_unused_t *)((char *)hdr + be16_to_cpu(*tagp));
-
-		/*
-		 * If it's not free then the data will go where the
-		 * leaf data starts now, if it works at all.
-		 */
-		if (be16_to_cpu(dup->freetag) == XFS_DIR2_DATA_FREE_TAG) {
-			if (be16_to_cpu(dup->length) + (be32_to_cpu(btp->stale) - 1) *
-			    (uint)sizeof(*blp) < len)
-				dup = NULL;
-		} else if ((be32_to_cpu(btp->stale) - 1) * (uint)sizeof(*blp) < len)
-			dup = NULL;
-		else
-			dup = (xfs_dir2_data_unused_t *)blp;
-		goto out;
-	}
-
-	/*
-	 * no stale entries, so just use free space.
-	 * Tag just before the first leaf entry.
-	 */
-	tagp = (__be16 *)blp - 1;
-
-	/* Data object just before the first leaf entry.  */
-	enddup = (xfs_dir2_data_unused_t *)((char *)hdr + be16_to_cpu(*tagp));
-
-	/*
-	 * If it's not free then can't do this add without cleaning up:
-	 * the space before the first leaf entry needs to be free so it
-	 * can be expanded to hold the pointer to the new entry.
-	 */
-	if (be16_to_cpu(enddup->freetag) == XFS_DIR2_DATA_FREE_TAG) {
-		/*
-		 * Check out the biggest freespace and see if it's the same one.
-		 */
-		dup = (xfs_dir2_data_unused_t *)
-		      ((char *)hdr + be16_to_cpu(bf[0].offset));
-		if (dup != enddup) {
-			/*
-			 * Not the same free entry, just check its length.
-			 */
-			if (be16_to_cpu(dup->length) < len)
-				dup = NULL;
-			goto out;
-		}
-
-		/*
-		 * It is the biggest freespace, can it hold the leaf too?
-		 */
-		if (be16_to_cpu(dup->length) < len + (uint)sizeof(*blp)) {
-			/*
-			 * Yes, use the second-largest entry instead if it works.
-			 */
-			if (be16_to_cpu(bf[1].length) >= len)
-				dup = (xfs_dir2_data_unused_t *)
-				      ((char *)hdr + be16_to_cpu(bf[1].offset));
-			else
-				dup = NULL;
-		}
-	}
-out:
-	*tagpp = tagp;
-	*dupp = dup;
-	*enddupp = enddup;
 }
 
 /*
@@ -456,21 +348,3 @@ xfs_dir2_block_lookup_int(
 	xfs_trans_brelse(tp, bp);
 	return XFS_ERROR(ENOENT);
 }
-
-/*
- * Qsort comparison routine for the block leaf entries.
- */
-static int					/* sort order */
-xfs_dir2_block_sort(
-	const void			*a,	/* first leaf entry */
-	const void			*b)	/* second leaf entry */
-{
-	const xfs_dir2_leaf_entry_t	*la;	/* first leaf entry */
-	const xfs_dir2_leaf_entry_t	*lb;	/* second leaf entry */
-
-	la = a;
-	lb = b;
-	return be32_to_cpu(la->hashval) < be32_to_cpu(lb->hashval) ? -1 :
-		(be32_to_cpu(la->hashval) > be32_to_cpu(lb->hashval) ? 1 : 0);
-}
-
