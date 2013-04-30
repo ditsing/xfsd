@@ -393,44 +393,6 @@ xfs_dir2_data_freeinsert(
 }
 
 /*
- * Remove a bestfree entry from the table.
- */
-STATIC void
-xfs_dir2_data_freeremove(
-	xfs_dir2_data_hdr_t	*hdr,		/* data block header */
-	xfs_dir2_data_free_t	*dfp,		/* bestfree entry pointer */
-	int			*loghead)	/* out: log data header */
-{
-#ifdef __KERNEL__
-	ASSERT(hdr->magic == cpu_to_be32(XFS_DIR2_DATA_MAGIC) ||
-	       hdr->magic == cpu_to_be32(XFS_DIR2_BLOCK_MAGIC));
-#endif
-	/*
-	 * It's the first entry, slide the next 2 up.
-	 */
-	if (dfp == &hdr->bestfree[0]) {
-		hdr->bestfree[0] = hdr->bestfree[1];
-		hdr->bestfree[1] = hdr->bestfree[2];
-	}
-	/*
-	 * It's the second entry, slide the 3rd entry up.
-	 */
-	else if (dfp == &hdr->bestfree[1])
-		hdr->bestfree[1] = hdr->bestfree[2];
-	/*
-	 * Must be the last entry.
-	 */
-	else
-		ASSERT(dfp == &hdr->bestfree[2]);
-	/*
-	 * Clear the 3rd entry, must be zero now.
-	 */
-	hdr->bestfree[2].length = 0;
-	hdr->bestfree[2].offset = 0;
-	*loghead = 1;
-}
-
-/*
  * Given a data block, reconstruct its bestfree map.
  */
 void
