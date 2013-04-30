@@ -1,0 +1,5 @@
+TARGETNAME=xfsd_driver
+TARGETTYPE=DRIVER
+
+SOURCES=stdafx.cpp \
+	xfsd_driver.cpp
