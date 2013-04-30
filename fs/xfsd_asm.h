@@ -101,9 +101,6 @@ static inline void put_unaligned_be64( __u64 num, void *p)
 	*(left++) = *(right++);
 }
 
-#ifdef WIN32
-#define do_div( n, base) ( n % base)
-#else
 #define do_div( n, base) 	\
 ( 				\
 { 				\
@@ -112,7 +109,6 @@ static inline void put_unaligned_be64( __u64 num, void *p)
 	ret; 			\
 } 				\
 )
-#endif
 
 static inline __u32 xfs_do_div(void *a, __u32 b, int n)
 {
