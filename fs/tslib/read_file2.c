@@ -1,6 +1,7 @@
 #include "xfsd.h"
 #include "read_file2.h"
 #include "xfs/xfs_types.h"
+#include "xfs/xfs_fs.h"
 #include "xfs/xfs_dir2.h"
 #include "xfs/xfs_sb.h"
 #include "xfs/xfs_ag.h"
@@ -16,7 +17,6 @@
 #include "xfs/xfs_bmap.h"
 #include "xfs/xfs_ialloc_btree.h"
 #include "xfs/xfs_inode.h"
-#include "xfs/xfs_fs.h"
 #include "xfs/xfs_icache.h"
 
 #include "xfs/xfs_error.h"
@@ -122,14 +122,14 @@ int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 
 	void 			*buf = kmem_zalloc_large( buf_size);
 	void 			*buf_zero = buf;
+	sector_t 		start_block;
+	size_t 			read_size;
+
 	if ( !buf)
 	{
 		error = ENOMEM;
 		goto out;
 	}
-
-	sector_t start_block;
-	size_t read_size;
 
 	while ( size)
 	{
@@ -138,7 +138,7 @@ int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 		if ( error)
 			goto out_free_buf;
 
-		error = tslib_read_disk_block( XFS_FSB_TO_BB( mount, start_block), buf, read_size);
+		error = read_disk_file_length( buf, start_block << blkbits, read_size, 1) == 0;
 		if ( error)
 			goto out_free_buf;
 
