@@ -6,55 +6,17 @@
 #define __IN_TSLIB__
 #include "syscall.h"
 
-static FILE *file;
-
-int open_disk_file( const char *name, const char *mode)
-{
-	file = fopen( name, mode);
-	return file == NULL ? -1 : 0;
-}
-
-int read_disk_file( void *ptr, int size, int nmemb)
-{
-	return fread( ptr, size, nmemb, file);
-}
-
-int write_disk_file( void * ptr, int size, int nmemb)
-{
-	return fwrite( ptr, size, nmemb, file);
-}
-
-int seek_disk_file( long offset, int whence)
-{
-	return fseek( file, offset, whence);
-}
-
-int seek_disk_file_set( long offset)
-{
-	return fseek( file, offset, SEEK_SET);
-}
-
-int seek_disk_file_cur( long offset)
-{
-	return fseek( file, offset, SEEK_CUR);
-}
-
-int seek_disk_file_end( long offset)
-{
-	return fseek( file, offset, SEEK_END);
-}
-
-void *mem_cpy( void *dst, const void *src, int n)
+void *mem_cpy( void *dst, const void *src, size_t n)
 {
 	return memcpy( dst, src, n);
 }
 
-void *mem_move( void *dst, const void *src, int n)
+void *mem_move( void *dst, const void *src, size_t n)
 {
 	return memmove( dst, src, n);
 }
 
-void *mem_set( void *s, int c, long n)
+void *mem_set( void *s, size_t c, long n)
 {
 	return memset( s, c, n);
 }
@@ -74,7 +36,7 @@ int str_ncmp( const char *s1, const char *s2, long n)
 	return strncmp( s1, s2, n);
 }
 
-int read_disk_file_length( void *ptr, long offset, int size, int nmemb)
+int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
 {
 	seek_disk_file_set( offset);
 	return read_disk_file( ptr, size, nmemb);

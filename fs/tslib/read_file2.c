@@ -138,7 +138,7 @@ int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 		if ( error)
 			goto out_free_buf;
 
-		error = tslib_read_disk( XFS_FSB_TO_BB( mount, start_block), buf, read_size);
+		error = tslib_read_disk_block( XFS_FSB_TO_BB( mount, start_block), buf, read_size);
 		if ( error)
 			goto out_free_buf;
 
