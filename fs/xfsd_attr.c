@@ -57,25 +57,17 @@
  * Internal routines when attribute list is one block.
  */
 STATIC int xfs_attr_leaf_get(xfs_da_args_t *args);
-STATIC int xfs_attr_leaf_addname(xfs_da_args_t *args);
-STATIC int xfs_attr_leaf_removename(xfs_da_args_t *args);
 STATIC int xfs_attr_leaf_list(xfs_attr_list_context_t *context);
 
 /*
  * Internal routines when attribute list is more than one block.
  */
 STATIC int xfs_attr_node_get(xfs_da_args_t *args);
-STATIC int xfs_attr_node_addname(xfs_da_args_t *args);
-STATIC int xfs_attr_node_removename(xfs_da_args_t *args);
 STATIC int xfs_attr_node_list(xfs_attr_list_context_t *context);
-STATIC int xfs_attr_fillstate(xfs_da_state_t *state);
-STATIC int xfs_attr_refillstate(xfs_da_state_t *state);
 
 /*
  * Routines to manipulate out-of-line attribute values.
  */
-STATIC int xfs_attr_rmtval_set(xfs_da_args_t *args);
-STATIC int xfs_attr_rmtval_remove(xfs_da_args_t *args);
 
 #define ATTR_RMTVALUE_MAPSIZE	1	/* # of map entries at once */
 
@@ -439,110 +431,6 @@ xfs_attr_leaf_list(xfs_attr_list_context_t *context)
 /*========================================================================
  * External routines when attribute list size > XFS_LBSIZE(mp).
  *========================================================================*/
-
-/*
- * Fill in the disk block numbers in the state structure for the buffers
- * that are attached to the state structure.
- * This is done so that we can quickly reattach ourselves to those buffers
- * after some set of transaction commits have released these buffers.
- */
-STATIC int
-xfs_attr_fillstate(xfs_da_state_t *state)
-{
-	xfs_da_state_path_t *path;
-	xfs_da_state_blk_t *blk;
-	int level;
-
-	trace_xfs_attr_fillstate(state->args);
-
-	/*
-	 * Roll down the "path" in the state structure, storing the on-disk
-	 * block number for those buffers in the "path".
-	 */
-	path = &state->path;
-	ASSERT((path->active >= 0) && (path->active < XFS_DA_NODE_MAXDEPTH));
-	for (blk = path->blk, level = 0; level < path->active; blk++, level++) {
-		if (blk->bp) {
-			blk->disk_blkno = XFS_BUF_ADDR(blk->bp);
-			blk->bp = NULL;
-		} else {
-			blk->disk_blkno = 0;
-		}
-	}
-
-	/*
-	 * Roll down the "altpath" in the state structure, storing the on-disk
-	 * block number for those buffers in the "altpath".
-	 */
-	path = &state->altpath;
-	ASSERT((path->active >= 0) && (path->active < XFS_DA_NODE_MAXDEPTH));
-	for (blk = path->blk, level = 0; level < path->active; blk++, level++) {
-		if (blk->bp) {
-			blk->disk_blkno = XFS_BUF_ADDR(blk->bp);
-			blk->bp = NULL;
-		} else {
-			blk->disk_blkno = 0;
-		}
-	}
-
-	return(0);
-}
-
-/*
- * Reattach the buffers to the state structure based on the disk block
- * numbers stored in the state structure.
- * This is done after some set of transaction commits have released those
- * buffers from our grip.
- */
-STATIC int
-xfs_attr_refillstate(xfs_da_state_t *state)
-{
-	xfs_da_state_path_t *path;
-	xfs_da_state_blk_t *blk;
-	int level, error;
-
-	trace_xfs_attr_refillstate(state->args);
-
-	/*
-	 * Roll down the "path" in the state structure, storing the on-disk
-	 * block number for those buffers in the "path".
-	 */
-	path = &state->path;
-	ASSERT((path->active >= 0) && (path->active < XFS_DA_NODE_MAXDEPTH));
-	for (blk = path->blk, level = 0; level < path->active; blk++, level++) {
-		if (blk->disk_blkno) {
-			error = xfs_da_node_read(state->args->trans,
-						state->args->dp,
-						blk->blkno, blk->disk_blkno,
-						&blk->bp, XFS_ATTR_FORK);
-			if (error)
-				return(error);
-		} else {
-			blk->bp = NULL;
-		}
-	}
-
-	/*
-	 * Roll down the "altpath" in the state structure, storing the on-disk
-	 * block number for those buffers in the "altpath".
-	 */
-	path = &state->altpath;
-	ASSERT((path->active >= 0) && (path->active < XFS_DA_NODE_MAXDEPTH));
-	for (blk = path->blk, level = 0; level < path->active; blk++, level++) {
-		if (blk->disk_blkno) {
-			error = xfs_da_node_read(state->args->trans,
-						state->args->dp,
-						blk->blkno, blk->disk_blkno,
-						&blk->bp, XFS_ATTR_FORK);
-			if (error)
-				return(error);
-		} else {
-			blk->bp = NULL;
-		}
-	}
-
-	return(0);
-}
 
 /*
  * Look up a filename in a node attribute list.

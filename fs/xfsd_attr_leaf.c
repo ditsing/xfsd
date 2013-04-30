@@ -55,36 +55,14 @@
 /*
  * Routines used for growing the Btree.
  */
-STATIC int xfs_attr_leaf_create(xfs_da_args_t *args, xfs_dablk_t which_block,
-				struct xfs_buf **bpp);
-STATIC void xfs_attr_leaf_rebalance(xfs_da_state_t *state,
-						   xfs_da_state_blk_t *blk1,
-						   xfs_da_state_blk_t *blk2);
-STATIC int xfs_attr_leaf_figure_balance(xfs_da_state_t *state,
-					   xfs_da_state_blk_t *leaf_blk_1,
-					   xfs_da_state_blk_t *leaf_blk_2,
-					   int *number_entries_in_blk1,
-					   int *number_usedbytes_in_blk1);
 
 /*
  * Routines used for shrinking the Btree.
  */
-STATIC int xfs_attr_node_inactive(xfs_trans_t **trans, xfs_inode_t *dp,
-				  struct xfs_buf *bp, int level);
-STATIC int xfs_attr_leaf_inactive(xfs_trans_t **trans, xfs_inode_t *dp,
-				  struct xfs_buf *bp);
-STATIC int xfs_attr_leaf_freextent(xfs_trans_t **trans, xfs_inode_t *dp,
-				   xfs_dablk_t blkno, int blkcnt);
 
 /*
  * Utility routines.
  */
-STATIC void xfs_attr_leaf_moveents(xfs_attr_leafblock_t *src_leaf,
-					 int src_start,
-					 xfs_attr_leafblock_t *dst_leaf,
-					 int dst_start, int move_count,
-					 xfs_mount_t *mp);
-STATIC int xfs_attr_leaf_entsize(xfs_attr_leafblock_t *leaf, int index);
 
 static void
 xfs_attr_leaf_verify(
@@ -542,107 +520,6 @@ xfs_attr_shortform_allfit(
  * Routines used for growing the Btree.
  *========================================================================*/
 
-/*
- * Examine entries until we reduce the absolute difference in
- * byte usage between the two blocks to a minimum.
- * GROT: Is this really necessary?  With other than a 512 byte blocksize,
- * GROT: there will always be enough room in either block for a new entry.
- * GROT: Do a double-split for this case?
- */
-STATIC int
-xfs_attr_leaf_figure_balance(xfs_da_state_t *state,
-				    xfs_da_state_blk_t *blk1,
-				    xfs_da_state_blk_t *blk2,
-				    int *countarg, int *usedbytesarg)
-{
-	xfs_attr_leafblock_t *leaf1, *leaf2;
-	xfs_attr_leaf_hdr_t *hdr1, *hdr2;
-	xfs_attr_leaf_entry_t *entry;
-	int count, max, index, totallen, half;
-	int lastdelta, foundit, tmp;
-
-	/*
-	 * Set up environment.
-	 */
-	leaf1 = blk1->bp->b_addr;
-	leaf2 = blk2->bp->b_addr;
-	hdr1 = &leaf1->hdr;
-	hdr2 = &leaf2->hdr;
-	foundit = 0;
-	totallen = 0;
-
-	/*
-	 * Examine entries until we reduce the absolute difference in
-	 * byte usage between the two blocks to a minimum.
-	 */
-	max = be16_to_cpu(hdr1->count) + be16_to_cpu(hdr2->count);
-	half  = (max+1) * sizeof(*entry);
-	half += be16_to_cpu(hdr1->usedbytes) +
-		be16_to_cpu(hdr2->usedbytes) +
-		xfs_attr_leaf_newentsize(
-				state->args->namelen,
-				state->args->valuelen,
-				state->blocksize, NULL);
-	half /= 2;
-	lastdelta = state->blocksize;
-	entry = &leaf1->entries[0];
-	for (count = index = 0; count < max; entry++, index++, count++) {
-
-#define XFS_ATTR_ABS(A)	(((A) < 0) ? -(A) : (A))
-		/*
-		 * The new entry is in the first block, account for it.
-		 */
-		if (count == blk1->index) {
-			tmp = totallen + sizeof(*entry) +
-				xfs_attr_leaf_newentsize(
-						state->args->namelen,
-						state->args->valuelen,
-						state->blocksize, NULL);
-			if (XFS_ATTR_ABS(half - tmp) > lastdelta)
-				break;
-			lastdelta = XFS_ATTR_ABS(half - tmp);
-			totallen = tmp;
-			foundit = 1;
-		}
-
-		/*
-		 * Wrap around into the second block if necessary.
-		 */
-		if (count == be16_to_cpu(hdr1->count)) {
-			leaf1 = leaf2;
-			entry = &leaf1->entries[0];
-			index = 0;
-		}
-
-		/*
-		 * Figure out if next leaf entry would be too much.
-		 */
-		tmp = totallen + sizeof(*entry) + xfs_attr_leaf_entsize(leaf1,
-									index);
-		if (XFS_ATTR_ABS(half - tmp) > lastdelta)
-			break;
-		lastdelta = XFS_ATTR_ABS(half - tmp);
-		totallen = tmp;
-#undef XFS_ATTR_ABS
-	}
-
-	/*
-	 * Calculate the number of usedbytes that will end up in lower block.
-	 * If new entry not in lower block, fix up the count.
-	 */
-	totallen -= count * sizeof(*entry);
-	if (foundit) {
-		totallen -= sizeof(*entry) +
-				xfs_attr_leaf_newentsize(
-						state->args->namelen,
-						state->args->valuelen,
-						state->blocksize, NULL);
-	}
-
-	*countarg = count;
-	*usedbytesarg = totallen;
-	return(foundit);
-}
 
 /*========================================================================
  * Routines used for shrinking the Btree.
@@ -959,153 +836,6 @@ xfs_attr_leaf_getvalue(
  *========================================================================*/
 
 /*
- * Move the indicated entries from one leaf to another.
- * NOTE: this routine modifies both source and destination leaves.
- */
-/*ARGSUSED*/
-STATIC void
-xfs_attr_leaf_moveents(xfs_attr_leafblock_t *leaf_s, int start_s,
-			xfs_attr_leafblock_t *leaf_d, int start_d,
-			int count, xfs_mount_t *mp)
-{
-	xfs_attr_leaf_hdr_t *hdr_s, *hdr_d;
-	xfs_attr_leaf_entry_t *entry_s, *entry_d;
-	int desti, tmp, i;
-
-	/*
-	 * Check for nothing to do.
-	 */
-	if (count == 0)
-		return;
-
-	/*
-	 * Set up environment.
-	 */
-	ASSERT(leaf_s->hdr.info.magic == cpu_to_be16(XFS_ATTR_LEAF_MAGIC));
-	ASSERT(leaf_d->hdr.info.magic == cpu_to_be16(XFS_ATTR_LEAF_MAGIC));
-	hdr_s = &leaf_s->hdr;
-	hdr_d = &leaf_d->hdr;
-	ASSERT((be16_to_cpu(hdr_s->count) > 0) &&
-	       (be16_to_cpu(hdr_s->count) < (XFS_LBSIZE(mp)/8)));
-	ASSERT(be16_to_cpu(hdr_s->firstused) >=
-		((be16_to_cpu(hdr_s->count)
-					* sizeof(*entry_s))+sizeof(*hdr_s)));
-	ASSERT(be16_to_cpu(hdr_d->count) < (XFS_LBSIZE(mp)/8));
-	ASSERT(be16_to_cpu(hdr_d->firstused) >=
-		((be16_to_cpu(hdr_d->count)
-					* sizeof(*entry_d))+sizeof(*hdr_d)));
-
-	ASSERT(start_s < be16_to_cpu(hdr_s->count));
-	ASSERT(start_d <= be16_to_cpu(hdr_d->count));
-	ASSERT(count <= be16_to_cpu(hdr_s->count));
-
-	/*
-	 * Move the entries in the destination leaf up to make a hole?
-	 */
-	if (start_d < be16_to_cpu(hdr_d->count)) {
-		tmp  = be16_to_cpu(hdr_d->count) - start_d;
-		tmp *= sizeof(xfs_attr_leaf_entry_t);
-		entry_s = &leaf_d->entries[start_d];
-		entry_d = &leaf_d->entries[start_d + count];
-		memmove((char *)entry_d, (char *)entry_s, tmp);
-	}
-
-	/*
-	 * Copy all entry's in the same (sorted) order,
-	 * but allocate attribute info packed and in sequence.
-	 */
-	entry_s = &leaf_s->entries[start_s];
-	entry_d = &leaf_d->entries[start_d];
-	desti = start_d;
-	for (i = 0; i < count; entry_s++, entry_d++, desti++, i++) {
-		ASSERT(be16_to_cpu(entry_s->nameidx)
-				>= be16_to_cpu(hdr_s->firstused));
-		tmp = xfs_attr_leaf_entsize(leaf_s, start_s + i);
-#ifdef GROT
-		/*
-		 * Code to drop INCOMPLETE entries.  Difficult to use as we
-		 * may also need to change the insertion index.  Code turned
-		 * off for 6.2, should be revisited later.
-		 */
-		if (entry_s->flags & XFS_ATTR_INCOMPLETE) { /* skip partials? */
-			memset(xfs_attr_leaf_name(leaf_s, start_s + i), 0, tmp);
-			be16_add_cpu(&hdr_s->usedbytes, -tmp);
-			be16_add_cpu(&hdr_s->count, -1);
-			entry_d--;	/* to compensate for ++ in loop hdr */
-			desti--;
-			if ((start_s + i) < offset)
-				result++;	/* insertion index adjustment */
-		} else {
-#endif /* GROT */
-			be16_add_cpu(&hdr_d->firstused, -tmp);
-			/* both on-disk, don't endian flip twice */
-			entry_d->hashval = entry_s->hashval;
-			/* both on-disk, don't endian flip twice */
-			entry_d->nameidx = hdr_d->firstused;
-			entry_d->flags = entry_s->flags;
-			ASSERT(be16_to_cpu(entry_d->nameidx) + tmp
-							<= XFS_LBSIZE(mp));
-			memmove(xfs_attr_leaf_name(leaf_d, desti),
-				xfs_attr_leaf_name(leaf_s, start_s + i), tmp);
-			ASSERT(be16_to_cpu(entry_s->nameidx) + tmp
-							<= XFS_LBSIZE(mp));
-			memset(xfs_attr_leaf_name(leaf_s, start_s + i), 0, tmp);
-			be16_add_cpu(&hdr_s->usedbytes, -tmp);
-			be16_add_cpu(&hdr_d->usedbytes, tmp);
-			be16_add_cpu(&hdr_s->count, -1);
-			be16_add_cpu(&hdr_d->count, 1);
-			tmp = be16_to_cpu(hdr_d->count)
-						* sizeof(xfs_attr_leaf_entry_t)
-						+ sizeof(xfs_attr_leaf_hdr_t);
-			ASSERT(be16_to_cpu(hdr_d->firstused) >= tmp);
-#ifdef GROT
-		}
-#endif /* GROT */
-	}
-
-	/*
-	 * Zero out the entries we just copied.
-	 */
-	if (start_s == be16_to_cpu(hdr_s->count)) {
-		tmp = count * sizeof(xfs_attr_leaf_entry_t);
-		entry_s = &leaf_s->entries[start_s];
-		ASSERT(((char *)entry_s + tmp) <=
-		       ((char *)leaf_s + XFS_LBSIZE(mp)));
-		memset((char *)entry_s, 0, tmp);
-	} else {
-		/*
-		 * Move the remaining entries down to fill the hole,
-		 * then zero the entries at the top.
-		 */
-		tmp  = be16_to_cpu(hdr_s->count) - count;
-		tmp *= sizeof(xfs_attr_leaf_entry_t);
-		entry_s = &leaf_s->entries[start_s + count];
-		entry_d = &leaf_s->entries[start_s];
-		memmove((char *)entry_d, (char *)entry_s, tmp);
-
-		tmp = count * sizeof(xfs_attr_leaf_entry_t);
-		entry_s = &leaf_s->entries[be16_to_cpu(hdr_s->count)];
-		ASSERT(((char *)entry_s + tmp) <=
-		       ((char *)leaf_s + XFS_LBSIZE(mp)));
-		memset((char *)entry_s, 0, tmp);
-	}
-
-	/*
-	 * Fill in the freemap information
-	 */
-	hdr_d->freemap[0].base = cpu_to_be16(sizeof(xfs_attr_leaf_hdr_t));
-	be16_add_cpu(&hdr_d->freemap[0].base, be16_to_cpu(hdr_d->count) *
-			sizeof(xfs_attr_leaf_entry_t));
-	hdr_d->freemap[0].size = cpu_to_be16(be16_to_cpu(hdr_d->firstused)
-			      - be16_to_cpu(hdr_d->freemap[0].base));
-	hdr_d->freemap[1].base = 0;
-	hdr_d->freemap[2].base = 0;
-	hdr_d->freemap[1].size = 0;
-	hdr_d->freemap[2].size = 0;
-	hdr_s->holes = 1;	/* leaf may not be compact */
-}
-
-/*
  * Compare two leaf blocks "order".
  * Return 0 unless leaf2 should go before leaf1.
  */
@@ -1150,29 +880,6 @@ xfs_attr_leaf_lasthash(
 	if (!leaf->hdr.count)
 		return(0);
 	return be32_to_cpu(leaf->entries[be16_to_cpu(leaf->hdr.count)-1].hashval);
-}
-
-/*
- * Calculate the number of bytes used to store the indicated attribute
- * (whether local or remote only calculate bytes in this block).
- */
-STATIC int
-xfs_attr_leaf_entsize(xfs_attr_leafblock_t *leaf, int index)
-{
-	xfs_attr_leaf_name_local_t *name_loc;
-	xfs_attr_leaf_name_remote_t *name_rmt;
-	int size;
-
-	ASSERT(leaf->hdr.info.magic == cpu_to_be16(XFS_ATTR_LEAF_MAGIC));
-	if (leaf->entries[index].flags & XFS_ATTR_LOCAL) {
-		name_loc = xfs_attr_leaf_name_local(leaf, index);
-		size = xfs_attr_leaf_entsize_local(name_loc->namelen,
-						   be16_to_cpu(name_loc->valuelen));
-	} else {
-		name_rmt = xfs_attr_leaf_name_remote(leaf, index);
-		size = xfs_attr_leaf_entsize_remote(name_rmt->namelen);
-	}
-	return(size);
 }
 
 /*

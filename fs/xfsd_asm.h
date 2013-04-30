@@ -175,7 +175,7 @@ static inline __u64 roundup( __u64 x, __u64 y)
 #else
 #define roundup( x, y) ( 					\
 { 								\
-		const auto __y = y; 				\
+		const typeof(y) __y = y; 				\
 		(((x) + (__y - 1)) / __y) * __y; 		\
 } 								\
 )
