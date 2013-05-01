@@ -140,9 +140,6 @@ struct __TSLIB_(list_head)
 	struct __TSLIB_(list_head) *prev, *next;
 };
 
-// mutex ???, This is a seriouse problem.
-FAKE_STRUCT( mutex);
-
 // Fake rcu_head
 struct __TSLIB_(rcu_head)
 {

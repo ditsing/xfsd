@@ -52,6 +52,7 @@
 #include "tslib/syscall.h"
 #include "tslib/spinlock.h"
 #include "tslib/sema.h"
+#include "tslib/mutex.h"
 
 #include "linux/defs.h"
 #include "linux/rbtree.h"
@@ -120,10 +121,6 @@ void sort(void *base, size_t num, size_t size,
 #define rcu_read_lock()
 #define rcu_read_unlock()
 #define call_rcu( para, func) func( para)
-#define mutex_init( lock)
-#define mutex_lock( lock)
-#define mutex_unlock( lock)
-#define DEFINE_MUTEX(x) int x
 
 /*
  * From compiler

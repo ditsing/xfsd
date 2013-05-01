@@ -2,7 +2,7 @@
 #define __TSLIB_SPINLOCK_H__
 
 
-#ifdef __WIN32__
+#ifdef WIN32
 
 /*
  * VC does not support empty struct.
