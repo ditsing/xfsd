@@ -1,3 +1,8 @@
+#ifdef WIN32
+#define __IN_TSLIB__
+#include "syscall.h"
+
+#else
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -78,3 +83,4 @@ void *mem_realloc( void *p, size_t size)
 {
 	return realloc( p, size);
 }
+#endif
