@@ -9,11 +9,12 @@ int open_disk_file( const char *name, const char *mode)
 	OBJECT_ATTRIBUTES attr;
 	IO_STATUS_BLOCK ios;
 	UNICODE_STRING filename;
+	NTSTATUS nts;
+
 	RtlInitUnicodeString( &filename, L"\\Device\\HarddiskVolume1\\xfsd\disk\xfs.lib");
-
 	InitializeObjectAttributes( &attr, &filename, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	nts = ZwOpenFile( &file, GENERIC_ALL, &attr, &ios, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
 
-	NTSTATUS nts = ZwOpenFile( &file, GENERIC_ALL, &attr, &ios, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
 	return !NT_SUCCESS(nts);
 }
 #else

@@ -1,6 +1,27 @@
 #ifdef WIN32
 #define __IN_TSLIB__
+#include <ntddk.h>
 #include "syscall.h"
+
+void *ddk_mem_zalloc( size_t size, unsigned flags)
+{
+	void *ptr = ddk_mem_alloc( size, flags);
+	if ( ptr)
+	{
+		mem_set( ptr, 0, size);
+	}
+	return ptr;
+}
+
+void *ddk_mem_alloc( size_t size, unsigned flags)
+{
+	return ExAllocatePool( flags ? PagedPool : NonPagedPool, size);
+}
+
+void ddk_mem_free( const void *ptr)
+{
+	ExFreePool( ( void *)ptr);
+}
 
 #else
 #include <stdio.h>
@@ -10,36 +31,6 @@
 
 #define __IN_TSLIB__
 #include "syscall.h"
-
-void *mem_cpy( void *dst, const void *src, size_t n)
-{
-	return memcpy( dst, src, n);
-}
-
-void *mem_move( void *dst, const void *src, size_t n)
-{
-	return memmove( dst, src, n);
-}
-
-void *mem_set( void *s, size_t c, long n)
-{
-	return memset( s, c, n);
-}
-
-int mem_cmp( const void *s1, const void *s2, size_t n)
-{
-	return memcmp( s1, s2, n);
-}
-
-long str_len( const char *str)
-{
-	return strlen( str);
-}
-
-int str_ncmp( const char *s1, const char *s2, long n)
-{
-	return strncmp( s1, s2, n);
-}
 
 int print( const char *format, ...)
 {
@@ -84,3 +75,33 @@ void *mem_realloc( void *p, size_t size)
 	return realloc( p, size);
 }
 #endif
+
+void *mem_cpy( void *dst, const void *src, size_t n)
+{
+	return memcpy( dst, src, n);
+}
+
+void *mem_move( void *dst, const void *src, size_t n)
+{
+	return memmove( dst, src, n);
+}
+
+void *mem_set( void *s, size_t c, long n)
+{
+	return memset( s, c, n);
+}
+
+int mem_cmp( const void *s1, const void *s2, size_t n)
+{
+	return memcmp( s1, s2, n);
+}
+
+long str_len( const char *str)
+{
+	return strlen( str);
+}
+
+int str_ncmp( const char *s1, const char *s2, long n)
+{
+	return strncmp( s1, s2, n);
+}

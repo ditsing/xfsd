@@ -15,6 +15,12 @@ void *mem_zalloc( size_t size);
 void mem_free( const void *p);
 void *mem_realloc( void *p, size_t size);
 
+#ifdef WIN32
+void *ddk_mem_alloc( size_t size, unsigned flags);
+void ddk_mem_free( const void *ptr);
+void *ddk_mem_zalloc( size_t size, unsigned flags);
+#endif
+
 #ifndef __IN_TSLIB__
 
 #define malloc mem_alloc

@@ -4,6 +4,61 @@
 /*
  * Built under Win32
  */
+#include "syscall.h"
+
+#define SLAB_HWCACHE_ALIGN	0x00002000UL	/* Align objs on cache lines */
+#define SLAB_RECLAIM_ACCOUNT	0x00020000UL		/* Objects are reclaimable */
+#define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
+
+#define GFP_KERNEL	1
+#define GFP_ATOMIC	0
+#define GFP_NOFS	0
+#define __GFP_NOFS	0
+#define __GFP_NOWARN    0
+
+typedef unsigned gfp_t;
+struct kmem_cache
+{
+	void *head;
+	size_t object_size;
+	const char *name;
+};
+
+static inline void *kmalloc( size_t size, gfp_t flags)
+{
+	return ddk_mem_alloc( size, flags);
+}
+
+static inline void kfree( const void *p)
+{
+	ddk_mem_free( p);
+}
+
+static inline void *vzalloc( unsigned long size)
+{
+	return ddk_mem_zalloc( size, 1);
+}
+
+static inline void vfree( const void *p)
+{
+	ddk_mem_free( p);
+}
+
+static inline int is_vmalloc_addr( const void *p)
+{
+	return 1;
+}
+
+inline void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flag);
+inline void kmem_cache_free(struct kmem_cache *cachep, void *objp);
+
+inline struct kmem_cache *
+kmem_cache_create(const char *name, size_t size, size_t align,
+		  unsigned long flags, void (*ctor)(void *));
+inline void kmem_cache_destroy(struct kmem_cache *s);
+inline unsigned int kmem_cache_size(struct kmem_cache *s);
+
+
 #else
 /*
  * We are in the userspace.
