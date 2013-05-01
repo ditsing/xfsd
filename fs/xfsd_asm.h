@@ -110,6 +110,38 @@ static inline void put_unaligned_be64( __u64 num, void *p)
 } 				\
 )
 
+#ifdef WIN32
+static inline __u32 xfs_do_div(void *a, __u32 b, int n)
+{
+	__u32 mod;
+	switch (n) {
+		case 4:
+			mod = *(__u32 *)a % b;
+			*(__u32 *)a = *(__u32 *)a / b;
+			return mod;
+		case 8:
+			mod = *(__u64 *)a % b;
+			*(__u64 *)a = *(__u64 *)a / b;
+			return mod;
+	}
+
+	/* NOTREACHED */
+	return 0;
+}
+
+static inline __u32 xfs_do_mod(void *a, __u32 b, int n)
+{
+	switch (n) {
+		case 4:
+			return *(__u32 *)a % b;
+		case 8:
+			return *(__u64 *)a % b;
+	}
+
+	/* NOTREACHED */
+	return 0;
+}
+#else
 static inline __u32 xfs_do_div(void *a, __u32 b, int n)
 {
 	__u32	mod;
@@ -144,6 +176,7 @@ static inline __u32 xfs_do_mod(void *a, __u32 b, int n)
 	/* NOTREACHED */
 	return 0;
 }
+#endif
 
 #undef do_div
 #define do_div(a, b)	xfs_do_div(&(a), (b), sizeof(a))
