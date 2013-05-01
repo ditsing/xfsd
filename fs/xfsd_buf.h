@@ -102,8 +102,13 @@ struct xfs_buf_map {
 	int			bm_len;	/* size of I/O */
 };
 
+#ifdef WIN32
+#define DEFINE_SINGLE_BUF_MAP(map, blkno, numblk) \
+	struct xfs_buf_map (map); (map).bm_bn = blkno; (map).bm_len = numblk;
+#else
 #define DEFINE_SINGLE_BUF_MAP(map, blkno, numblk) \
 	struct xfs_buf_map (map) = { .bm_bn = (blkno), .bm_len = (numblk) };
+#endif
 
 struct xfs_buf_ops {
 	void (*verify_read)(struct xfs_buf *);
