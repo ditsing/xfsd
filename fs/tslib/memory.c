@@ -1,6 +1,9 @@
 #include "memory.h"
+
 #ifdef WIN32
-#include "ntddk.h"
+
+#include <ntddk.h>
+
 void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flag)
 {
 	return ExAllocateFromNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)cachep->head);
@@ -36,4 +39,5 @@ unsigned int kmem_cache_size(struct kmem_cache *s)
 {
 	return s->object_size;
 }
+
 #endif

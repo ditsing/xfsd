@@ -3,7 +3,9 @@
 
 #ifdef WIN32
 #include <ntddk.h>
-HANDLE file;
+
+static HANDLE file;
+
 int open_disk_file( const char *name, const char *mode)
 {
 	OBJECT_ATTRIBUTES attr;
@@ -17,6 +19,7 @@ int open_disk_file( const char *name, const char *mode)
 
 	return !NT_SUCCESS(nts);
 }
+
 #else
 static FILE *file;
 
