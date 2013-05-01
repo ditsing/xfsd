@@ -71,6 +71,12 @@
 
 #define __return_address (0)
 
+#ifdef WIN32
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) < (y) ? (x) : (y))
+#define min_t(type, x, y) ((type)min(((type)x), ((type)y)))
+#define max_t(type, x, y) ((type)max(((type)x), ((type)y)))
+#else
 #define min_t(type, x, y) ({			\
 	type __min1 = (x);			\
 	type __min2 = (y);			\
@@ -92,6 +98,7 @@
 	typeof(y) _max2 = (y);			\
 	(void) (&_max1 == &_max2);		\
 	_max1 > _max2 ? _max1 : _max2; })
+#endif
 
 #define likely(x) (x)
 #define unlikely(x) (x)
