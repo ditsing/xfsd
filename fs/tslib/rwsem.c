@@ -51,6 +51,7 @@ int down_read_trylock( struct rw_semaphore *sem)
 	if ( nts == STATUS_SUCCESS)
 	{
 		sem->reader_count++;
+		KeReleaseMutex( ( KMUTEX *)&sem->mutex, FALSE);
 	}
 	return nts != STATUS_SUCCESS;
 }
@@ -119,6 +120,7 @@ int down_read_trylock( struct rw_semaphore *sem)
 	if ( ret)
 	{
 		sem->reader_count++;
+		pthread_mutex_unlock( ( pthread_mutex_t *)&sem->mutex);
 	}
 	return ret;
 }

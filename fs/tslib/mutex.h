@@ -1,3 +1,6 @@
+#ifndef __TSLIB_MUTEX_H__
+#define __TSLIB_MUTEX_H__
+
 struct mutex
 {
 	struct kernel_mutex *kmutex;
@@ -11,3 +14,4 @@ void mutex_init( mutex_t *);
 
 extern struct kernel_mutex inline_kmutex;
 #define DEFINE_MUTEX(x) mutex_t x = { &inline_kmutex};
+#endif
