@@ -73,6 +73,7 @@
 #define __return_address (0)
 
 #ifdef WIN32
+#define inline
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) < (y) ? (x) : (y))
 #define min_t(type, x, y) ((type)min(((type)x), ((type)y)))
