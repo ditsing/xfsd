@@ -10,6 +10,8 @@ int str_ncmp( const char *s1, const char *s2, long n);
 int print( const char *format, ...);
 int eprint( const char *format, ...);
 
+int to_lower( int c);
+
 void *mem_alloc( size_t size);
 void *mem_zalloc( size_t size);
 void mem_free( const void *p);
@@ -31,6 +33,7 @@ void *ddk_mem_zalloc( size_t size, unsigned flags);
 #define memset mem_set
 #define memcmp mem_cmp
 #define strlen str_len
+#define tolower to_lower
 
 #endif
 #endif

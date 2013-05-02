@@ -28,6 +28,7 @@ void ddk_mem_free( const void *ptr)
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define __IN_TSLIB__
 #include "syscall.h"
@@ -104,4 +105,9 @@ long str_len( const char *str)
 int str_ncmp( const char *s1, const char *s2, long n)
 {
 	return strncmp( s1, s2, n);
+}
+
+int to_lower( int c)
+{
+	return tolower( c);
 }
