@@ -13,7 +13,7 @@
 #define GFP_KERNEL	1
 #define GFP_ATOMIC	0
 #define GFP_NOFS	0
-#define __GFP_NOFS	0
+#define __GFP_FS	0
 #define __GFP_NOWARN    0
 
 typedef unsigned gfp_t;
