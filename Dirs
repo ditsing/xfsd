@@ -1,0 +1,5 @@
+Dirs=\
+	fs\tslib 	\
+	fs\linux 	\
+	fs  		\
+	driver
