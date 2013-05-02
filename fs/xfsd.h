@@ -131,6 +131,7 @@ void sort(void *base, size_t num, size_t size,
 /*
  * From kernel.h
  */
+#define UINT_MAX (~0U)
 #define ULONG_MAX (~0UL)
 #define LONG_MAX ((long)(~0UL>>1))
 
@@ -179,5 +180,6 @@ int xfs_unmount( struct xfs_mount **mpp);
 
 #ifdef WIN32
 #define __func__ "This is a tag."
+#define __builtin_constant_p(n) 0
 #endif
 #endif

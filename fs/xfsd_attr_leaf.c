@@ -94,8 +94,13 @@ xfs_attr_leaf_write_verify(
 }
 
 const struct xfs_buf_ops xfs_attr_leaf_buf_ops = {
+#ifdef WIN32
+	xfs_attr_leaf_read_verify,
+	xfs_attr_leaf_write_verify
+#else
 	.verify_read = xfs_attr_leaf_read_verify,
 	.verify_write = xfs_attr_leaf_write_verify,
+#endif
 };
 
 int

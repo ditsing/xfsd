@@ -32,7 +32,9 @@
 #include "xfs/xfs_inode.h"
 #include "xfs/xfs_btree.h"
 #include "xfs/xfs_alloc.h"
+#ifndef WIN32
 #include "xfs/xfs_extent_busy.h"
+#endif
 #include "xfs/xfs_error.h"
 
 #include "xfsd_trace.h"
@@ -294,8 +296,13 @@ xfs_agf_write_verify(
 }
 
 const struct xfs_buf_ops xfs_agf_buf_ops = {
+#ifdef WIN32
+	xfs_agf_read_verify,
+	xfs_agf_write_verify
+#else
 	.verify_read = xfs_agf_read_verify,
 	.verify_write = xfs_agf_write_verify,
+#endif
 };
 
 /*

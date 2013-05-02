@@ -48,7 +48,7 @@
 
 xfs_agnumber_t xfs_set_inode32(struct xfs_mount *mp);
 xfs_agnumber_t xfs_set_inode64(struct xfs_mount *mp);
-int xfs_iget( struct xfs_mount *, struct xfs_trans *, xfs_ino_t, uint, uint, struct xfs_inode **);
+int xfs_iput( struct xfs_inode	*ip);
 
 
 #ifdef HAVE_PERCPU_SB

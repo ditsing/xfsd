@@ -31,7 +31,9 @@
 #include "xfs/xfs_inode.h"
 #include "xfs/xfs_btree.h"
 #include "xfs/xfs_alloc.h"
+#ifndef WIN32
 #include "xfs/xfs_extent_busy.h"
+#endif
 #include "xfs/xfs_error.h"
 
 #include "xfsd_trace.h"
