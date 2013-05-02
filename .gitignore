@@ -6,3 +6,4 @@ objchk_wxp_x86/
 *wrn
 *.sdf
 *.opensdf
+*.lib
