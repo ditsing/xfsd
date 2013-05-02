@@ -168,6 +168,9 @@ void sort(void *base, size_t num, size_t size,
 #define block_size(x) BLK_SIZE
 #define bdev_logical_block_size(x) BLK_SIZE
 
+/*
+ * Functions not in xfs
+ */
 struct xfs_mount;
 int xfs_fs_init();
 int xfs_fs_exit();

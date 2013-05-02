@@ -46,6 +46,11 @@
 #include "xfsd_trace.h"
 #include "xfs/xfs_icache.h"
 
+xfs_agnumber_t xfs_set_inode32(struct xfs_mount *mp);
+xfs_agnumber_t xfs_set_inode64(struct xfs_mount *mp);
+int xfs_iget( struct xfs_mount *, struct xfs_trans *, xfs_ino_t, uint, uint, struct xfs_inode **);
+
+
 #ifdef HAVE_PERCPU_SB
 STATIC void	xfs_icsb_balance_counter(xfs_mount_t *, xfs_sb_field_t,
 						int);
