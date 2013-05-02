@@ -1,8 +1,5 @@
 #ifndef __TSLIB_PROCESS_H__
 #define __TSLIB_PROCESS_H__
-#ifdef WIN32
-#else
-
 struct process
 {
 	int flags;
@@ -21,5 +18,4 @@ static inline long congestion_wait(int sync, long timeout)
 {
 	return 0;
 }
-#endif
 #endif
