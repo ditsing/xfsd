@@ -482,7 +482,7 @@ xfs_initialize_perag(
 		INIT_RADIX_TREE(&pag->pag_ici_root, GFP_ATOMIC);
 		spin_lock_init(&pag->pag_buf_lock);
 #ifdef WIN32
-		pag->pag_buf_tree.rb_node = NULL
+		pag->pag_buf_tree.rb_node = NULL;
 #else
 		pag->pag_buf_tree = RB_ROOT;
 #endif
