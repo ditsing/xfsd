@@ -14,7 +14,7 @@ enum {
 #define PF_FSTRANS	0x00020000	/* inside a filesystem transaction */
 
 extern const struct process *current;
-static inline long congestion_wait(int sync, long timeout)
+static long congestion_wait(int sync, long timeout)
 {
 	return 0;
 }
