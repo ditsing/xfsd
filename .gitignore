@@ -4,3 +4,5 @@ objchk_wxp_x86/
 *.suo
 *.err
 *wrn
+*.sdf
+*.opensdf
