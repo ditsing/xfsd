@@ -200,8 +200,11 @@ xfs_allocbt_write_verify(
 }
 
 const struct xfs_buf_ops xfs_allocbt_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_allocbt_read_verify,
 	.verify_write = xfs_allocbt_write_verify,
+#endif
 };
 
 
@@ -245,6 +248,8 @@ xfs_allocbt_recs_inorder(
 #endif	/* DEBUG */
 
 static const struct xfs_btree_ops xfs_allocbt_ops = {
+#ifdef WIN32
+#else
 	.rec_len		= sizeof(xfs_alloc_rec_t),
 	.key_len		= sizeof(xfs_alloc_key_t),
 
@@ -260,6 +265,7 @@ static const struct xfs_btree_ops xfs_allocbt_ops = {
 #ifdef DEBUG
 	.keys_inorder		= xfs_allocbt_keys_inorder,
 	.recs_inorder		= xfs_allocbt_recs_inorder,
+#endif
 #endif
 };
 

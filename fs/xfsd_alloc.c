@@ -166,8 +166,11 @@ xfs_agfl_read_verify(
 }
 
 const struct xfs_buf_ops xfs_agfl_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_agfl_read_verify,
 	.verify_write = xfs_agfl_write_verify,
+#endif
 };
 
 /*

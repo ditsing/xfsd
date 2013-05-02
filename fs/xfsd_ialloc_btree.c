@@ -161,8 +161,11 @@ xfs_inobt_write_verify(
 }
 
 const struct xfs_buf_ops xfs_inobt_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_inobt_read_verify,
 	.verify_write = xfs_inobt_write_verify,
+#endif
 };
 
 #ifdef DEBUG
@@ -188,6 +191,8 @@ xfs_inobt_recs_inorder(
 #endif	/* DEBUG */
 
 static const struct xfs_btree_ops xfs_inobt_ops = {
+#ifdef WIN32
+#else
 	.rec_len		= sizeof(xfs_inobt_rec_t),
 	.key_len		= sizeof(xfs_inobt_key_t),
 
@@ -203,6 +208,7 @@ static const struct xfs_btree_ops xfs_inobt_ops = {
 #ifdef DEBUG
 	.keys_inorder		= xfs_inobt_keys_inorder,
 	.recs_inorder		= xfs_inobt_recs_inorder,
+#endif
 #endif
 };
 

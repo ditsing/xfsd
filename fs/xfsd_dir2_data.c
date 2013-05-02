@@ -245,13 +245,19 @@ xfs_dir2_data_write_verify(
 }
 
 const struct xfs_buf_ops xfs_dir2_data_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_dir2_data_read_verify,
 	.verify_write = xfs_dir2_data_write_verify,
+#endif
 };
 
 static const struct xfs_buf_ops xfs_dir2_data_reada_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_dir2_data_reada_verify,
 	.verify_write = xfs_dir2_data_write_verify,
+#endif
 };
 
 

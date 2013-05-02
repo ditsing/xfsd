@@ -85,8 +85,11 @@ xfs_dir2_block_write_verify(
 }
 
 const struct xfs_buf_ops xfs_dir2_block_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_dir2_block_read_verify,
 	.verify_write = xfs_dir2_block_write_verify,
+#endif
 };
 
 static int

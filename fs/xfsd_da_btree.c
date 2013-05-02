@@ -116,8 +116,11 @@ xfs_da_node_read_verify(
 }
 
 const struct xfs_buf_ops xfs_da_node_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_da_node_read_verify,
 	.verify_write = xfs_da_node_write_verify,
+#endif
 };
 
 
@@ -478,8 +481,11 @@ xfs_default_hashname(
 }
 
 const struct xfs_nameops xfs_default_nameops = {
+#ifdef WIN32
+#else
 	.hashname	= xfs_default_hashname,
 	.compname	= xfs_da_compname
+#endif
 };
 
 /*

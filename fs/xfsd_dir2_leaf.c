@@ -91,13 +91,19 @@ xfs_dir2_leafn_write_verify(
 }
 
 static const struct xfs_buf_ops xfs_dir2_leaf1_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_dir2_leaf1_read_verify,
 	.verify_write = xfs_dir2_leaf1_write_verify,
+#endif
 };
 
 const struct xfs_buf_ops xfs_dir2_leafn_buf_ops = {
+#ifdef WIN32
+#else
 	.verify_read = xfs_dir2_leafn_read_verify,
 	.verify_write = xfs_dir2_leafn_write_verify,
+#endif
 };
 
 static int
