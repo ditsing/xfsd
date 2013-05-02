@@ -1,5 +1,35 @@
 #ifdef WIN32
-#error "what's the fuck!"
+#include <ntddk.h>
+#include "syscall.h"
+#include "mutex.h"
+
+struct kernel_mutex
+{
+	KMUTEX _;
+};
+
+void mutex_init( struct mutex *m)
+{
+	m->kmutex = ( struct kernel_mutex *) ddk_mem_alloc( sizeof( KMUTEX), 0);
+	KeInitializeMutex( ( KMUTEX *)&m->kmutex, 0);
+}
+
+void mutex_lock( struct mutex *m)
+{
+	KeWaitForMutexObject( ( KMUTEX *)&m->kmutex, Executive, KernelMode, FALSE, NULL);
+}
+
+void mutex_unlock( struct mutex *m)
+{
+	KeReleaseMutex( ( KMUTEX *)&m->kmutex, FALSE);
+}
+
+int mutex_trylock( struct mutex *m)
+{
+	NTSTATUS nts = KeWaitForMutexObject( ( KMUTEX *)&m->kmutex, Executive, KernelMode, FALSE, 0);
+	return nts != STATUS_SUCCESS;
+}
+
 #else
 #include <pthread.h>
 #include "mutex.h"

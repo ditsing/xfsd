@@ -1,7 +1,3 @@
-#ifdef WIN32
-#error "what's the fuck!"
-#else
-
 struct mutex
 {
 	struct kernel_mutex *kmutex;
@@ -15,5 +11,3 @@ void mutex_init( mutex_t *);
 
 extern struct kernel_mutex inline_kmutex;
 #define DEFINE_MUTEX(x) mutex_t x = { &inline_kmutex};
-
-#endif

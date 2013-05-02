@@ -1,5 +1,66 @@
 #ifdef WIN32
-#error "what's the fuck!"
+#include <ntddk.h>
+#include "rwsem.h"
+#include "syscall.h"
+
+struct kernel_mutex
+{
+	KMUTEX _;
+};
+
+void init_rwsem( struct rw_semaphore *sem)
+{
+	sem->mutex = ( struct kernel_mutex *) ddk_mem_alloc( sizeof( KMUTEX), 0);
+	KeInitializeMutex( ( KMUTEX *)&sem->mutex, 0);
+	sem->reader_count = 0;
+}
+
+void down_write( struct rw_semaphore *sem)
+{
+	KeWaitForMutexObject( ( KMUTEX *)&sem->mutex, Executive, KernelMode, FALSE, NULL);
+}
+
+void up_write( struct rw_semaphore *sem)
+{
+	KeReleaseMutex( ( KMUTEX *)&sem->mutex, FALSE);
+}
+
+int down_write_trylock( struct rw_semaphore *sem)
+{
+	NTSTATUS nts = KeWaitForMutexObject( ( KMUTEX *)&sem->mutex, Executive, KernelMode, FALSE, 0);
+	return nts != STATUS_SUCCESS;
+}
+
+void down_read( struct rw_semaphore *sem)
+{
+	KeWaitForMutexObject( ( KMUTEX *)&sem->mutex, Executive, KernelMode, FALSE, NULL);
+	sem->reader_count++;
+	KeReleaseMutex( ( KMUTEX *)&sem->mutex, FALSE);
+}
+
+void up_read( struct rw_semaphore *sem)
+{
+	KeWaitForMutexObject( ( KMUTEX *)&sem->mutex, Executive, KernelMode, FALSE, NULL);
+	sem->reader_count--;
+	KeReleaseMutex( ( KMUTEX *)&sem->mutex, FALSE);
+}
+
+int down_read_trylock( struct rw_semaphore *sem)
+{
+	NTSTATUS nts = KeWaitForMutexObject( ( KMUTEX *)&sem->mutex, Executive, KernelMode, FALSE, 0);
+	if ( nts == STATUS_SUCCESS)
+	{
+		sem->reader_count++;
+	}
+	return nts != STATUS_SUCCESS;
+}
+
+void downgrade_write( struct rw_semaphore *sem)
+{
+	sem->reader_count++;
+	KeReleaseMutex( ( KMUTEX *)&sem->mutex, FALSE);
+}
+
 #else
 #include <pthread.h>
 #include "rwsem.h"
