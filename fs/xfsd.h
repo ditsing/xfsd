@@ -177,3 +177,4 @@ int xfs_unmount( struct xfs_mount **mpp);
 #ifdef WIN32
 #define __func__ "This is a tag."
 #endif
+#endif
