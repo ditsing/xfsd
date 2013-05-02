@@ -198,7 +198,7 @@ typedef __s64 			__TSLIB_(int64_t);
 	(type *)((char *)__mptr - offsetof(type, member)); })
 #else
 #define container_of(ptr, type, member) ((type *)( \
-			(char *)(address) - \
+			(char *)(ptr) - \
 			(unsigned long)(&((type *)0)->member)))
 #endif
 
