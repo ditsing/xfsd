@@ -14,10 +14,10 @@ xfs_mount_t *mount;
 
 int tslib_init()
 {
+	int error;
 	radix_tree_init();
 	tslib_file_init();
 
-	int error;
 	error = xfs_fs_init();
 	if ( error)
 	{

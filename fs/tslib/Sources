@@ -1,0 +1,12 @@
+TARGETNAME=tslib
+TARGETTYPE=DRIVER_LIBRARY
+TARGETPATH=..\..\driver
+INCLUDES=..;.
+SOURCES=\
+       syscall.c	\
+       process.c 	\
+       sema.c 		\
+       disk.c 		\
+       rwsem.c 		\
+       tslib.c 		\
+       read_file2.c		

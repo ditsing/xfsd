@@ -143,7 +143,7 @@ int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 			goto out_free_buf;
 
 		file_offset += read_size;
-		buf += read_size;
+		buf = ( char *)buf + read_size;
 		size -= read_size < size ? read_size : size;
 	}
 	mem_cpy( ptr, buf_zero, acc_size);
