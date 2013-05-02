@@ -85,6 +85,8 @@ xfs_ascii_ci_compname(
 
 static struct xfs_nameops xfs_ascii_ci_nameops = {
 #ifdef WIN32
+	xfs_ascii_ci_hashname,
+	xfs_ascii_ci_compname
 #else
 	.hashname	= xfs_ascii_ci_hashname,
 	.compname	= xfs_ascii_ci_compname,

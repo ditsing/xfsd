@@ -246,6 +246,8 @@ xfs_dir2_data_write_verify(
 
 const struct xfs_buf_ops xfs_dir2_data_buf_ops = {
 #ifdef WIN32
+	xfs_dir2_data_read_verify,
+	xfs_dir2_data_write_verify
 #else
 	.verify_read = xfs_dir2_data_read_verify,
 	.verify_write = xfs_dir2_data_write_verify,
@@ -254,6 +256,8 @@ const struct xfs_buf_ops xfs_dir2_data_buf_ops = {
 
 static const struct xfs_buf_ops xfs_dir2_data_reada_buf_ops = {
 #ifdef WIN32
+	xfs_dir2_data_reada_verify,
+	xfs_dir2_data_write_verify
 #else
 	.verify_read = xfs_dir2_data_reada_verify,
 	.verify_write = xfs_dir2_data_write_verify,

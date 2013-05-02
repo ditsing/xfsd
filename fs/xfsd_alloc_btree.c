@@ -201,6 +201,8 @@ xfs_allocbt_write_verify(
 
 const struct xfs_buf_ops xfs_allocbt_buf_ops = {
 #ifdef WIN32
+	xfs_allocbt_read_verify,
+	xfs_allocbt_write_verify
 #else
 	.verify_read = xfs_allocbt_read_verify,
 	.verify_write = xfs_allocbt_write_verify,
@@ -249,6 +251,7 @@ xfs_allocbt_recs_inorder(
 
 static const struct xfs_btree_ops xfs_allocbt_ops = {
 #ifdef WIN32
+	0
 #else
 	.rec_len		= sizeof(xfs_alloc_rec_t),
 	.key_len		= sizeof(xfs_alloc_key_t),

@@ -77,6 +77,8 @@ xfs_dir2_free_write_verify(
 
 static const struct xfs_buf_ops xfs_dir2_free_buf_ops = {
 #ifdef WIN32
+	xfs_dir2_free_read_verify,
+	xfs_dir2_free_write_verify
 #else
 	.verify_read = xfs_dir2_free_read_verify,
 	.verify_write = xfs_dir2_free_write_verify,

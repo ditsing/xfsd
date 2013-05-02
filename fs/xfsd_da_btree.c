@@ -117,6 +117,8 @@ xfs_da_node_read_verify(
 
 const struct xfs_buf_ops xfs_da_node_buf_ops = {
 #ifdef WIN32
+	xfs_da_node_read_verify,
+	xfs_da_node_write_verify
 #else
 	.verify_read = xfs_da_node_read_verify,
 	.verify_write = xfs_da_node_write_verify,
@@ -482,6 +484,8 @@ xfs_default_hashname(
 
 const struct xfs_nameops xfs_default_nameops = {
 #ifdef WIN32
+	xfs_default_hashname,
+	xfs_da_compname
 #else
 	.hashname	= xfs_default_hashname,
 	.compname	= xfs_da_compname

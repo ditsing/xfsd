@@ -590,6 +590,8 @@ xfs_agi_write_verify(
 
 const struct xfs_buf_ops xfs_agi_buf_ops = {
 #ifdef WIN32
+	xfs_agi_read_verify,
+	xfs_agi_write_verify
 #else
 	.verify_read = xfs_agi_read_verify,
 	.verify_write = xfs_agi_write_verify,

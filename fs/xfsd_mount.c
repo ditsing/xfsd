@@ -697,6 +697,8 @@ xfs_sb_write_verify(
 
 const struct xfs_buf_ops xfs_sb_buf_ops = {
 #ifdef WIN32
+	xfs_sb_read_verify,
+	xfs_sb_write_verify
 #else
 	.verify_read = xfs_sb_read_verify,
 	.verify_write = xfs_sb_write_verify,
@@ -705,6 +707,8 @@ const struct xfs_buf_ops xfs_sb_buf_ops = {
 
 static const struct xfs_buf_ops xfs_sb_quiet_buf_ops = {
 #ifdef WIN32
+	xfs_sb_quiet_read_verify,
+	xfs_sb_write_verify
 #else
 	.verify_read = xfs_sb_quiet_read_verify,
 	.verify_write = xfs_sb_write_verify,

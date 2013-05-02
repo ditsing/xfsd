@@ -662,6 +662,8 @@ xfs_bmbt_write_verify(
 
 const struct xfs_buf_ops xfs_bmbt_buf_ops = {
 #ifdef WIN32
+	xfs_bmbt_read_verify,
+	xfs_bmbt_write_verify
 #else
 	.verify_read = xfs_bmbt_read_verify,
 	.verify_write = xfs_bmbt_write_verify,
@@ -694,6 +696,7 @@ xfs_bmbt_recs_inorder(
 
 static const struct xfs_btree_ops xfs_bmbt_ops = {
 #ifdef WIN32
+	0
 #else
 	.rec_len		= sizeof(xfs_bmbt_rec_t),
 	.key_len		= sizeof(xfs_bmbt_key_t),
