@@ -1,0 +1,6 @@
+TARGETNAME=linux
+TARGETTYPE=DRIVER_LIBRARY
+TARGETPATH=..\..\driver
+INCLUDES=..;.
+SOURCES=rbtree.c \
+	sort_win32.c

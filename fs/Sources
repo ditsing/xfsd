@@ -2,8 +2,6 @@ TARGETNAME=xfsd_fs
 TARGETTYPE=DRIVER_LIBRARY
 TARGETPATH=..\driver
 SOURCES=hello.c\
-       tslib\syscall.c		\
-       linux\rbtree.c		\
        xfsd_dir2_sf.c		\
        xfsd_bmap_btree.c	\
        xfsd_dir2_node.c		\
@@ -12,7 +10,6 @@ SOURCES=hello.c\
        xfsd_dir2.c 		\
        xfsd_dir2_block.c 	\
        xfsd_dir2_data.c 	\
-       linux\sort.c 		\
        xfsd_message.c 		\
        xfsd_error.c 		\
        xfsd_attr_leaf.c 	\
@@ -29,12 +26,6 @@ SOURCES=hello.c\
        xfsd_mem.c 		\
        xfsd_super.c 		\
        xfsd_trans.c 		\
-       tslib\process.c 		\
        radix-tree.c 		\
-       tslib\sema.c 		\
-       tslib\disk.c 		\
-       tslib\rwsem.c 		\
        xfsd_icache.c 		\
-       xfsd_uuid.c 		\
-       tslib\tslib.c 		\
-       tslib\read_file2.c		
+       xfsd_uuid.c 
