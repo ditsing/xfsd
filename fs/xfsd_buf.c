@@ -671,7 +671,11 @@ xfs_buf_ioapply_map(
 	*count -= size;
 	*buf_offset += size;
 
+#ifdef WIN32
+	bp->b_error = tslib_read_disk_block( bp->b_maps[map].bm_bn, ( char *)bp->b_addr + offset, size);
+#else
 	bp->b_error = tslib_read_disk_block( bp->b_maps[map].bm_bn, bp->b_addr + offset, size);
+#endif
 }
 
 STATIC void
@@ -756,7 +760,11 @@ xfs_buf_offset(
 	xfs_buf_t		*bp,
 	size_t			offset)
 {
+#ifdef WIN32
+	return ( char *)bp->b_addr + offset;
+#else
 	return bp->b_addr + offset;
+#endif
 }
 
 /*

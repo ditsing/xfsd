@@ -665,7 +665,11 @@ xfs_attr_rmtval_get(xfs_da_args_t *args)
 			tmp = min_t(int, valuelen, BBTOB(bp->b_length));
 			xfs_buf_iomove(bp, 0, tmp, dst, XBRW_READ);
 			xfs_buf_relse(bp);
+#ifdef WIN32
+			dst = ( char *)dst + tmp;
+#else
 			dst += tmp;
+#endif
 			valuelen -= tmp;
 
 			lblkno += map[i].br_blockcount;
