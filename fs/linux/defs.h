@@ -3,6 +3,7 @@
 
 #ifdef WIN32
 #define __attribute__(x)
+#define inline
 #endif
 
 #define EXPORT_SYMBOL(x)
