@@ -1,7 +1,9 @@
-TARGETNAME=xfsd_fs
+TARGETNAME=fs
 TARGETTYPE=DRIVER_LIBRARY
 TARGETPATH=..\driver
-SOURCES=hello.c\
+TARGETLIBS=..\driver\i386\tslib.lib \
+	   ..\driver\i386\linux.lib
+SOURCES=\
        xfsd_dir2_sf.c		\
        xfsd_bmap_btree.c	\
        xfsd_dir2_node.c		\

@@ -1,6 +1,9 @@
 TARGETNAME=xfsd_driver
 TARGETTYPE=DRIVER
-TARGETLIBS=../fs/build/xfsd_fs.lib
+INCLUDES=../fs;.
+TARGETLIBS=i386\tslib.lib \
+	i386\linux.lib \
+	i386\fs.lib
 
 SOURCES=stdafx.cpp \
 	xfsd_driver.cpp

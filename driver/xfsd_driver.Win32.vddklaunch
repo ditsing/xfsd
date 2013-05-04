@@ -1,8 +1,14 @@
 <?xml version="1.0"?>
 <DDKLaunchParams xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <DebugConnectionString>vm://XP</DebugConnectionString>
+  <RemoteMachineHostname />
   <PathOnTarget>%SystemRoot%\System32\Drivers\xfsd_driver.sys</PathOnTarget>
   <StartMode>LegacyStartStop</StartMode>
   <StartModeArg>xfsd_driver</StartModeArg>
+  <StartModeIntArg>0</StartModeIntArg>
   <StopMode>LegacyStartStop</StopMode>
   <StopModeArg>xfsd_driver</StopModeArg>
+  <StopModeIntArg>0</StopModeIntArg>
+  <KeepSessionWhenDriverUnloads>false</KeepSessionWhenDriverUnloads>
+  <AutoInstallPolicy>AutoInstallInteractive</AutoInstallPolicy>
 </DDKLaunchParams>

@@ -9,4 +9,7 @@ SOURCES=\
        disk.c 		\
        rwsem.c 		\
        tslib.c 		\
+       memory.c 	\
+       mutex.c		\
+       read_super.c 	\
        read_file2.c		

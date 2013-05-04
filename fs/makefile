@@ -1,3 +1,4 @@
+!INCLUDE $(NTMAKEENV)/makefile.def
 debug :
 	$(MAKE) -C build
 dll :
