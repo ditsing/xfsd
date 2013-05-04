@@ -20,6 +20,20 @@ int open_disk_file( const char *name, const char *mode)
 	return !NT_SUCCESS(nts);
 }
 
+LARGE_INTEGER offset;
+int read_disk_file( void *ptr, size_t size, size_t nmemb)
+{
+	IO_STATUS_BLOCK ios;
+	ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size, &offset, NULL);
+	return 0;
+}
+
+int seek_disk_file_set( long o)
+{
+	offset.QuadPart = o;
+	return 0;
+}
+
 #else
 static FILE *file;
 
@@ -59,6 +73,8 @@ int seek_disk_file_end( long offset)
 	return fseek( file, offset, SEEK_END);
 }
 
+#endif
+
 int tslib_read_disk_block( long long block, void *data, int bytes)
 {
 	// Overflow.
@@ -72,5 +88,3 @@ int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
 	seek_disk_file_set( offset);
 	return read_disk_file( ptr, size, nmemb);
 }
-
-#endif
