@@ -8,6 +8,7 @@ struct kernel_mutex
 	KMUTEX _;
 };
 
+struct kernel_mutex inline_kmutex;
 void mutex_init( struct mutex *m)
 {
 	m->kmutex = ( struct kernel_mutex *) ddk_mem_alloc( sizeof( KMUTEX), 0);

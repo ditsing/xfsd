@@ -1,8 +1,9 @@
-#include "memory.h"
 
 #ifdef WIN32
 
 #include <ntddk.h>
+#include "linux/defs.h"
+#include "memory.h"
 
 void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flag)
 {
@@ -19,10 +20,11 @@ kmem_cache_create(const char *name, size_t size, size_t align,
 		  unsigned long flags, void (*ctor)(void *))
 {
 	struct kmem_cache *cachep = (struct kmem_cache *)ddk_mem_alloc( sizeof( struct kmem_cache), 0);
+	size_t l = str_len( name) + 1;
+
 	cachep->head = ( PNPAGED_LOOKASIDE_LIST)( sizeof( NPAGED_LOOKASIDE_LIST), 0);
 	ExInitializeNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)&cachep->head, NULL, NULL, 0, size, 0, 0);
 
-	size_t l = str_len( name) + 1;
 	cachep->name = ( const char *)mem_cpy( ddk_mem_alloc( l, 1), name, l);
 	cachep->object_size = size;
 	return cachep;
@@ -31,7 +33,7 @@ kmem_cache_create(const char *name, size_t size, size_t align,
 void kmem_cache_destroy(struct kmem_cache *s)
 {
 	ExDeleteNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)s->head);
-	mem_free( s->name);
+	ddk_mem_free( s->name);
 	ddk_mem_free( s);
 }
 
