@@ -36,7 +36,6 @@
 #include "xfs/xfs_mount.h"
 #include "xfs/xfs_itable.h"
 #include "xfs/xfs_inode_item.h"
-#include "xfs/xfs_extfree_item.h"
 #include "xfs/xfs_alloc.h"
 #include "xfs/xfs_bmap.h"
 #include "xfs/xfs_rtalloc.h"

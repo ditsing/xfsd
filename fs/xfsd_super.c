@@ -44,7 +44,6 @@
 #include "xfs/xfs_utils.h"
 #include "xfs/xfs_filestream.h"
 #include "xfs/xfs_da_btree.h"
-#include "xfs/xfs_extfree_item.h"
 #include "xfs/xfs_mru_cache.h"
 #include "xfs/xfs_inode_item.h"
 
