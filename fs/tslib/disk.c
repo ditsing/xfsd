@@ -24,8 +24,7 @@ LARGE_INTEGER offset = {0};
 int read_disk_file( void *ptr, size_t size, size_t nmemb)
 {
 	IO_STATUS_BLOCK ios;
-	ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size, &offset, NULL);
-	return 0;
+	return NT_SUCCESS( ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL)) ? 1 : 0;
 }
 
 int seek_disk_file_set( long o)
