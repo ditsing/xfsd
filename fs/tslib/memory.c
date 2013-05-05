@@ -24,7 +24,7 @@ kmem_cache_create(const char *name, size_t size, size_t align,
 	char *n_name = ( char *)ddk_mem_alloc( l, 1);
 
 	cachep->head = ddk_mem_alloc( sizeof( NPAGED_LOOKASIDE_LIST), 0);
-	ExInitializeNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)&cachep->head, NULL, NULL, 0, size, 0, 0);
+	ExInitializeNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)cachep->head, NULL, NULL, 0, size, 0, 0);
 
 	mem_cpy( n_name, name, l);
 	
