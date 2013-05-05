@@ -6,10 +6,21 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 #ifdef __cplusplus
 extern "C" NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath);
+extern "C"
+{
+#include "tslib/tslib.h"
+}
 #endif
+
 
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath)
 {
+	DbgBreakPoint();
+	if ( tslib_init())
+	{
+		KdPrint(("INIT ERROR!\n"));
+		return STATUS_FAILED_DRIVER_ENTRY;
+	}
 	UNICODE_STRING DeviceName,Win32Device;
 	PDEVICE_OBJECT DeviceObject = NULL;
 	NTSTATUS status;

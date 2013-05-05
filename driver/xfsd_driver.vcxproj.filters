@@ -18,6 +18,9 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\fs\tslib\memory.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -26,8 +29,16 @@
     <ClCompile Include="xfsd_driver.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\fs\tslib\memory.c">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(ProjectDir)\sources" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="i386\linux.lib" />
+    <Library Include="i386\tslib.lib" />
+    <Library Include="i386\xfsd_fs.lib" />
   </ItemGroup>
 </Project>

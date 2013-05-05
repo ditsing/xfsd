@@ -20,7 +20,7 @@ int open_disk_file( const char *name, const char *mode)
 	return !NT_SUCCESS(nts);
 }
 
-LARGE_INTEGER offset;
+LARGE_INTEGER offset = {0};
 int read_disk_file( void *ptr, size_t size, size_t nmemb)
 {
 	IO_STATUS_BLOCK ios;
