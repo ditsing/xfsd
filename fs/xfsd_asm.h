@@ -18,7 +18,7 @@
 #define atomic_inc(x) 		(((x)->counter)++)
 
 #define atomic_dec_and_lock(x, y) atomic_dec(x)
-#define atomic_dec_and_test(x) 	atomic_dec_return(x)
+#define atomic_dec_and_test(x) 	(!atomic_dec_return(x))
 
 static inline __u16 get_unaligned_be16( const void *p)
 {

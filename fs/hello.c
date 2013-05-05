@@ -62,5 +62,7 @@ int main()
 		printf("Got nothing!\n");
 	}
 
+	xfs_fs_exit();
+
 	return 0;
 }
