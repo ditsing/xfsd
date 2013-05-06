@@ -12,22 +12,22 @@ struct kernel_mutex inline_kmutex;
 void mutex_init( struct mutex *m)
 {
 	m->kmutex = ( struct kernel_mutex *) ddk_mem_alloc( sizeof( KMUTEX), 0);
-	KeInitializeMutex( ( KMUTEX *)&m->kmutex, 0);
+	KeInitializeMutex( ( KMUTEX *)m->kmutex, 0);
 }
 
 void mutex_lock( struct mutex *m)
 {
-	KeWaitForMutexObject( ( KMUTEX *)&m->kmutex, Executive, KernelMode, FALSE, NULL);
+	KeWaitForMutexObject( ( KMUTEX *)m->kmutex, Executive, KernelMode, FALSE, NULL);
 }
 
 void mutex_unlock( struct mutex *m)
 {
-	KeReleaseMutex( ( KMUTEX *)&m->kmutex, FALSE);
+	KeReleaseMutex( ( KMUTEX *)m->kmutex, FALSE);
 }
 
 int mutex_trylock( struct mutex *m)
 {
-	NTSTATUS nts = KeWaitForMutexObject( ( KMUTEX *)&m->kmutex, Executive, KernelMode, FALSE, 0);
+	NTSTATUS nts = KeWaitForMutexObject( ( KMUTEX *)m->kmutex, Executive, KernelMode, FALSE, 0);
 	return nts != STATUS_SUCCESS;
 }
 
@@ -49,7 +49,7 @@ void mutex_init( struct mutex *m)
 	pthread_mutex_lock( &init_mutex);
 
 	m->kmutex = ( struct kernel_mutex *) mem_alloc( sizeof( pthread_mutex_t));
-	pthread_mutex_init( ( pthread_mutex_t *)&m->kmutex, NULL);
+	pthread_mutex_init( ( pthread_mutex_t *)m->kmutex, NULL);
 
 	pthread_mutex_unlock( &init_mutex);
 }
