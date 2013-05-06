@@ -33,16 +33,24 @@ int tslib_init()
 	error = xfs_mount( &mount);
 	if ( error)
 	{
-		goto out_umount;
+		goto out_close_file;
 	}
 
 	return 0;
 
- out_umount:
+ out_close_file:
+	close_disk_file();
  out_fs:
 	xfs_fs_exit();
  out:
 	return error;
+}
+
+void tslib_exit()
+{
+	xfs_unmount( &mount);
+	close_disk_file();
+	xfs_fs_exit();
 }
 
 xfs_sb_t *tslib_get_sb()

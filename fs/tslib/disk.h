@@ -10,6 +10,7 @@ int seek_disk_file( long offset, size_t whence);
 int seek_disk_file_set( long offset);
 int seek_disk_file_cur( long offset);
 int seek_disk_file_end( long offset);
+void close_disk_file();
 int tslib_read_disk_block( long long block, void *data, int bytes);
 int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb);
 #endif

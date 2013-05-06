@@ -33,6 +33,11 @@ int seek_disk_file_set( long o)
 	return 0;
 }
 
+void close_disk_file()
+{
+	ZwClose( &file);
+}
+
 #else
 static FILE *file;
 
@@ -70,6 +75,11 @@ int seek_disk_file_cur( long offset)
 int seek_disk_file_end( long offset)
 {
 	return fseek( file, offset, SEEK_END);
+}
+
+void close_disk_file()
+{
+	fclose( file);
 }
 
 #endif
