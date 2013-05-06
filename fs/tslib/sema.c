@@ -11,7 +11,17 @@ struct kerenl_sem
 int sema_init( struct semaphore *sem, int value)
 {
 	sem->sem = ( struct kerenl_sem*)ddk_mem_alloc( sizeof( KSEMAPHORE), 0);
-	return KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, 0, value), 0;
+	if ( value == 0)
+	{
+		KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, 0, 1);
+		down( sem);
+	}
+	else
+	{
+		KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, 0, value), 0;
+	}
+
+	return 0;
 }
 
 int down( struct semaphore *sem)
