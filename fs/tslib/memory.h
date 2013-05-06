@@ -22,6 +22,7 @@ struct kmem_cache
 	void *head;
 	size_t object_size;
 	const char *name;
+	void (*ctor)(void *);
 };
 
 static inline void *kmalloc( size_t size, gfp_t flags)
@@ -126,7 +127,12 @@ static inline int is_vmalloc_addr( const void *p)
 
 static inline void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flag)
 {
-	return mem_alloc( cachep->object_size);
+	void *ptr = mem_alloc( cachep->object_size);
+	if ( cachep->ctor && ptr)
+	{
+		cachep->ctor( ptr);
+	}
+	return ptr;
 }
 
 static inline void kmem_cache_free(struct kmem_cache *cachep, void *objp)

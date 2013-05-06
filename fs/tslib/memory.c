@@ -7,7 +7,12 @@
 
 void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flag)
 {
-	return ExAllocateFromNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)cachep->head);
+	void *ptr = ExAllocateFromNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)cachep->head);
+	if ( cachep->ctor && ptr)
+	{
+		cachep->ctor( ptr);
+	}
+	return ptr;
 }
 
 void kmem_cache_free(struct kmem_cache *cachep, void *objp)
@@ -27,13 +32,14 @@ kmem_cache_create(const char *name, size_t size, size_t align,
 	ExInitializeNPagedLookasideList( (PNPAGED_LOOKASIDE_LIST)cachep->head, NULL, NULL, 0, size, 0, 0);
 
 	mem_cpy( n_name, name, l);
-	
+
 	cachep->name = n_name;
 	KdPrint(("size is %d\n", (int)sizeof( NPAGED_LOOKASIDE_LIST)));
 	KdPrint(("name is %s\n", cachep->name));
 	KdPrint(("l is %d\n", l));
 	KdPrint(("addr is %p %p %p\n", cachep, cachep->name, cachep->head));
 	cachep->object_size = size;
+	cachep->ctor = ctor;
 	return cachep;
 }
 
