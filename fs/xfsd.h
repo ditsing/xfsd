@@ -40,6 +40,7 @@
 #define ASSERT(x)
 #define BUG_ON(x)
 #define WARN_ON(x)
+#define BUG BUG_ON(1)
 
 #define i_size_read(x) ((x)->i_size)
 
