@@ -955,6 +955,8 @@ xfs_mountfs(
 
 	xfs_mount_common(mp, sbp);
 
+	mutex_init( &xfs_uuid_table_mutex);
+
 	/*
 	 * Check for a mismatched features2 values.  Older kernels
 	 * read & wrote into the wrong sb offset for sb_features2

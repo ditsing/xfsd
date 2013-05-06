@@ -24,7 +24,7 @@ int down( struct semaphore *sem)
 
 int up( struct semaphore *sem)
 {
-	return KeReleaseSemaphore( ( KSEMAPHORE*)sem->sem, IO_NO_INCREMENT,1,FALSE);
+	return KeReleaseSemaphore( ( KSEMAPHORE*)sem->sem, IO_NO_INCREMENT, 1, FALSE);
 }
 
 int down_trylock( struct semaphore *sem)
