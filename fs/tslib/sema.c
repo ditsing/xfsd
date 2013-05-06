@@ -10,16 +10,9 @@ struct kerenl_sem
 
 int sema_init( struct semaphore *sem, int value)
 {
+	int limit = value ? value : 1;
 	sem->sem = ( struct kerenl_sem*)ddk_mem_alloc( sizeof( KSEMAPHORE), 0);
-	if ( value == 0)
-	{
-		KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, 0, 1);
-		down( sem);
-	}
-	else
-	{
-		KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, 0, value), 0;
-	}
+	KeInitializeSemaphore( ( KSEMAPHORE*)sem->sem, value, limit);
 
 	return 0;
 }
