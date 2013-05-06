@@ -281,7 +281,9 @@ int xfs_mount( struct xfs_mount **mpp)
  out_free_sb:
 	xfs_freesb(mp);
  out_free_mp:
+	/*
 	xfs_free_fsname(mp);
+	*/
 	kfree(mp);
  out:
 	return -error;
@@ -292,6 +294,8 @@ int xfs_unmount( struct xfs_mount **mpp)
 	struct xfs_mount	*mp = *mpp;
 	xfs_unmountfs(mp);
 	xfs_freesb(mp);
+	/*
 	xfs_free_fsname(mp);
+	*/
 	return 0;
 }
