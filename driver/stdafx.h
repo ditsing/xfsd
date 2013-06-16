@@ -8,6 +8,7 @@ extern "C"
 
 #endif
 
+#include <ntifs.h>
 #include <ntddk.h>
 #include <ntddstor.h>
 #include <mountdev.h>

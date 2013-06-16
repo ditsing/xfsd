@@ -18,18 +18,12 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\fs\tslib\memory.h">
-      <Filter>Source files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="xfsd_driver.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\fs\tslib\memory.c">
       <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>

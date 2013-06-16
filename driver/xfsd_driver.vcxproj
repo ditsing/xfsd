@@ -67,11 +67,9 @@ build</NMakeReBuildCommandLine>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\fs\tslib\memory.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\fs\tslib\memory.c" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="xfsd_driver.cpp" />
   </ItemGroup>
