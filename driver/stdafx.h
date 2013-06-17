@@ -18,3 +18,7 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+
+VOID xfsd_driver_char_to_wchar( WCHAR *dest, CHAR *source, ULONG len);
+VOID xfsd_driver_wchar_to_char( CHAR *dest, WCHAR *source, ULONG len);
