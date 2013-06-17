@@ -8,13 +8,16 @@ extern "C" NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRI
 extern "C"
 {
 #include "tslib/tslib.h"
+#include "tslib/read_file2.h"
 }
 #endif
 
-NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS try_open_device( UNICODE_STRING device);
+
+NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
-NTSTATUS xfsd_driver_irp_create( PDEVICE_OBJECT DevObj, PIRP Irp, PIO_STACK_LOCATION irpsp);
+NTSTATUS xfsd_driver_create( IN PDEVICE_OBJECT DevObj, IN PIRP Irp);
+NTSTATUS xfsd_driver_info( IN PDEVICE_OBJECT DevObj, IN PIRP Irp);
 NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 static PDEVICE_OBJECT fs_dev;
@@ -30,9 +33,14 @@ typedef struct _IrpContext
 	PFILE_OBJECT file;
 } IrpContext;
 
+typedef struct _xfsd_vcb
+{
+	PVPB vpb;
+	tslib_file_p root_dir;
+} xfsd_vcb;
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath)
 {
-	DbgBreakPoint();
 	if ( tslib_init())
 	{
 		KdPrint(("INIT ERROR!\n"));
@@ -43,19 +51,16 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 	NTSTATUS status;
 	unsigned i;
 
-	DbgBreakPoint();
 	RtlInitUnicodeString(&DeviceName,L"\\Device\\xfsd_driver");
 	RtlInitUnicodeString(&Win32Device,L"\\DosDevices\\xfsd_driver");
 
 	for (i = 0; i <= IRP_MJ_MAXIMUM_FUNCTION; i++)
 		DriverObject->MajorFunction[i] = xfsd_driverDefaultHandler;
 
-	/*
-	DriverObject->MajorFunction[IRP_MJ_CREATE] = xfsd_driverCreateClose;
-	DriverObject->MajorFunction[IRP_MJ_CLOSE] = xfsd_driverCreateClose;
-	*/
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = xfsd_driver_create;
 	DriverObject->MajorFunction[IRP_MJ_FILE_SYSTEM_CONTROL] = xfsd_driver_filesystem_control;
 	DriverObject->MajorFunction[IRP_MJ_QUERY_VOLUME_INFORMATION] = xfsd_driver_vol_info;
+	DriverObject->MajorFunction[IRP_MJ_QUERY_INFORMATION] = xfsd_driver_info;
 	
 	DriverObject->DriverUnload = xfsd_driverUnload;
 	status = IoCreateDevice(DriverObject,
@@ -168,7 +173,7 @@ NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
                 Buffer->VolumeSerialNumber = 0xDEEDBEEF;
 
-                VolumeLabelLength = 5;
+                VolumeLabelLength = 4;
 
                 Buffer->VolumeLabelLength = VolumeLabelLength * 2;
 
@@ -186,11 +191,11 @@ NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
                     __leave;
                 }
 
-				Buffer->VolumeLabel[0] = (WCHAR)"X";
-				Buffer->VolumeLabel[1] = (WCHAR)"F";
-				Buffer->VolumeLabel[2] = (WCHAR)"S";
-				Buffer->VolumeLabel[3] = (WCHAR)"D";
-				Buffer->VolumeLabel[4] = (WCHAR)"\0";
+				Buffer->VolumeLabel[0] = (WCHAR)'X';
+				Buffer->VolumeLabel[1] = (WCHAR)'F';
+				Buffer->VolumeLabel[2] = (WCHAR)'S';
+				Buffer->VolumeLabel[3] = (WCHAR)'D';
+//				Buffer->VolumeLabel[4] = (WCHAR)'\0';
 
                 Irp->IoStatus.Information = RequiredLength;
                 status = STATUS_SUCCESS;
@@ -265,10 +270,10 @@ NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 				// BUG::MAXNameLENGTH;
                 Buffer->MaximumComponentNameLength = 100000;
 
-                Buffer->FileSystemNameLength = 5 * 2;
+                Buffer->FileSystemNameLength = 4 * 2;
 
                 RequiredLength = sizeof(FILE_FS_ATTRIBUTE_INFORMATION) +
-                    5 * 2 - sizeof(WCHAR);
+                    4 * 2 - sizeof(WCHAR);
 
                 if (Length < RequiredLength)
                 {
@@ -281,7 +286,7 @@ NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 				Buffer->FileSystemName[1] = (WCHAR)'F';
 				Buffer->FileSystemName[2] = (WCHAR)'S';
 				Buffer->FileSystemName[3] = (WCHAR)'D';
-				Buffer->FileSystemName[3] = (WCHAR)'\0';
+//				Buffer->FileSystemName[4] = (WCHAR)'\0';
 
                 Irp->IoStatus.Information = RequiredLength;
                 status = STATUS_SUCCESS;
@@ -318,10 +323,6 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	irpsp = Irp->Tail.Overlay.CurrentStackLocation;
 	switch ( irpsp->MajorFunction)
 	{
-	case IRP_MJ_CREATE:
-		xfsd_driver_irp_create( DeviceObject, Irp, irpsp);
-		name = "IRP_MJ_CREATE";
-		break;
 	case IRP_MJ_CLOSE:
 		name = "IRP_MJ_CLOSE";
 		Irp->IoStatus.Status = STATUS_SUCCESS;
@@ -356,11 +357,15 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		Irp->IoStatus.Status = STATUS_SUCCESS;
 		IoCompleteRequest(Irp, IO_DISK_INCREMENT);
 		break;
+	case IRP_MJ_FLUSH_BUFFERS:
+	case IRP_MJ_SHUTDOWN:
+		Irp->IoStatus.Status = STATUS_SUCCESS;
+		IoCompleteRequest(Irp, IO_DISK_INCREMENT);
+		break;
 	default:
 		KdPrint(("Unexpected major function: %#x\n", irpsp->MajorFunction ));
 	};
 	KdPrint(("Get IRP:: %s at %p\n", name, DeviceObject));
-	DbgBreakPoint();
 	return Irp->IoStatus.Status;
 }
 
@@ -381,6 +386,8 @@ NTSTATUS xfsd_driver_verify_magic_number( PDEVICE_OBJECT dev)
     PIO_STACK_LOCATION  IoStackLocation;
 	PCHAR				Buffer;
 	ULONG				Length = 512;
+	LARGE_INTEGER		Offset;
+	Offset.QuadPart = 0;
 
 	Buffer = (PCHAR)ExAllocatePool( NonPagedPool, Length);
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
@@ -390,7 +397,7 @@ NTSTATUS xfsd_driver_verify_magic_number( PDEVICE_OBJECT dev)
         dev,
         (PVOID)Buffer,
         Length,
-        0,
+		&Offset,
         &Event,
         &IoStatus
         );
@@ -450,7 +457,7 @@ NTSTATUS xfsd_driver_mount_volume( IrpContext *irpc)
 
 		status = IoCreateDevice(
 			irpc->dev->DriverObject,
-			0,
+			sizeof(xfsd_vcb),
 			NULL,
 			FILE_DEVICE_DISK_FILE_SYSTEM,
 			0,
@@ -461,6 +468,9 @@ NTSTATUS xfsd_driver_mount_volume( IrpContext *irpc)
 		{
 			__leave;
 		}
+		xfsd_vcb *vcb = ( xfsd_vcb *)fs_vol->DeviceExtension;
+		vcb->root_dir = tslib_file_get_root_dir();
+		vcb->vpb = irpc->sp->Parameters.MountVolume.Vpb;
 
 		(irpc->sp->Parameters.MountVolume.Vpb)->DeviceObject = fs_vol;
 	}
@@ -536,8 +546,55 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 	return status;
 }
 
-NTSTATUS xfsd_driver_irp_create( PDEVICE_OBJECT DevObj, PIRP Irp, PIO_STACK_LOCATION irpsp)
+NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 {
+	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
+	ULONG cache_l = file->FileName.Length << 1;
+	CHAR *cache = ( CHAR *)ExAllocatePool( PagedPool, cache_l + 1);
+	xfsd_driver_wchar_to_char( cache, file->FileName.Buffer, cache_l);
+	*(cache + cache_l) = '\0';
+
+	PCHAR leg = cache;
+	tslib_file_p fcb = vcb->root_dir;
+
+	if ( *leg == '\\')
+	{
+		++leg;
+	}
+	else
+	{
+		PFILE_OBJECT related_file = file->RelatedFileObject;
+		if ( related_file && tslib_file_is_dir( ( tslib_file_p) related_file->FsContext))
+		{
+			fcb = ( tslib_file_p)related_file->FsContext;
+		}
+	}
+
+	while ( fcb && tslib_file_is_dir( fcb) && leg != cache + cache_l + 1)
+	{
+		PCHAR next = leg;
+		while ( *next && *next != '\\')
+		{
+			++next;
+		}
+		*next = '\0';
+
+		fcb = open_file2_relative( fcb, leg);
+		leg = next + 1;
+	}
+
+	file->FsContext = (PVOID) fcb;
+	file->PrivateCacheMap = NULL;
+	file->SectionObjectPointer = NULL;
+	file->Vpb = vcb->vpb;
+	return fcb ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+}
+
+NTSTATUS xfsd_driver_create( PDEVICE_OBJECT DevObj, PIRP Irp)
+{
+	IrpContext *irpc = xfsd_alloc_irpc( DevObj, Irp);
+	PIO_STACK_LOCATION irpsp = irpc->sp;
+
 	NTSTATUS status = STATUS_SUCCESS;
 	if ( DevObj == fs_dev)
 	{
@@ -555,8 +612,303 @@ NTSTATUS xfsd_driver_irp_create( PDEVICE_OBJECT DevObj, PIRP Irp, PIO_STACK_LOCA
 	}
 	else
 	{
-		KdPrint(("Creating file %s\n", irpsp->FileObject->FileName.Buffer));
-		status = STATUS_NOT_SUPPORTED;
+		KdPrint(("Creating file name %s\n", irpsp->FileObject->FileName.Buffer));
+		KdPrint(("Creating file length %ld\n", (long)irpsp->FileObject->FileName.Length));
+
+		PFILE_OBJECT file = irpsp->FileObject;
+		if ( NT_SUCCESS( xfsd_driver_lookup( file)))
+		{
+			KdPrint(("Creating File done.\n"));
+			Irp->IoStatus.Status = STATUS_SUCCESS;
+			Irp->IoStatus.Information = FILE_OPENED;
+			IoCompleteRequest(Irp, IO_DISK_INCREMENT);
+		}
+		else
+		{
+			KdPrint(("Creating File Failed.\n"));
+			status = Irp->IoStatus.Status = STATUS_OBJECT_NAME_NOT_FOUND;
+			IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		}
 	}
+
+	ExFreePool(irpc);
 	return status;
+}
+
+NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
+{
+	IrpContext *irpc = xfsd_alloc_irpc( DevObj, Irp);
+
+    PDEVICE_OBJECT          DeviceObject;
+    NTSTATUS                Status = STATUS_UNSUCCESSFUL;
+    PFILE_OBJECT            FileObject;
+    tslib_file_p            Fcb;
+    PIO_STACK_LOCATION      IrpSp;
+    FILE_INFORMATION_CLASS  FileInformationClass;
+    ULONG                   Length;
+    PVOID                   SystemBuffer;
+    BOOLEAN                 FcbResourceAcquired = FALSE;
+
+    __try
+    {
+        DeviceObject = irpc->dev;
+
+        if (DeviceObject == fs_dev)
+        {
+            Status = STATUS_INVALID_DEVICE_REQUEST;
+            __leave;
+        }
+
+        FileObject = irpc->file;
+
+		Fcb = ( tslib_file_p) FileObject->FsContext;
+
+        IrpSp = irpc->sp;
+
+        FileInformationClass = IrpSp->Parameters.QueryFile.FileInformationClass;
+
+        Length = IrpSp->Parameters.QueryFile.Length;
+
+        SystemBuffer = Irp->AssociatedIrp.SystemBuffer;
+
+        RtlZeroMemory(SystemBuffer, Length);
+
+        switch (FileInformationClass)
+        {
+        case FileBasicInformation:
+            {
+                PFILE_BASIC_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_BASIC_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_BASIC_INFORMATION) SystemBuffer;
+
+                Buffer->CreationTime.QuadPart = 0;
+
+                Buffer->LastAccessTime.QuadPart = 0;
+
+                Buffer->LastWriteTime.QuadPart = 0;
+
+                Buffer->ChangeTime.QuadPart = 0;
+
+				Buffer->FileAttributes = FILE_ATTRIBUTE_NORMAL;
+				SetFlag( Buffer->FileAttributes, FILE_ATTRIBUTE_READONLY);
+				if ( tslib_file_is_dir(Fcb))
+				{
+					SetFlag(Buffer->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+				}
+
+                Irp->IoStatus.Information = sizeof(FILE_BASIC_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileStandardInformation:
+            {
+                PFILE_STANDARD_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_STANDARD_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_STANDARD_INFORMATION) SystemBuffer;
+
+                Buffer->AllocationSize.QuadPart = tslib_file_size(Fcb);
+                Buffer->EndOfFile.QuadPart = tslib_file_size(Fcb);
+                Buffer->NumberOfLinks = 1;
+                Buffer->DeletePending = FALSE;
+
+                Buffer->Directory = tslib_file_is_dir(Fcb);
+
+                Irp->IoStatus.Information = sizeof(FILE_STANDARD_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileInternalInformation:
+            {
+                PFILE_INTERNAL_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_INTERNAL_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_INTERNAL_INFORMATION) SystemBuffer;
+
+                // The "inode number"
+				Buffer->IndexNumber.QuadPart = tslib_file_inode_number(Fcb);
+
+                Irp->IoStatus.Information = sizeof(FILE_INTERNAL_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileEaInformation:
+            {
+                PFILE_EA_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_EA_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_EA_INFORMATION) SystemBuffer;
+
+                Buffer->EaSize = 0;
+
+                Irp->IoStatus.Information = sizeof(FILE_EA_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileNameInformation:
+            {
+				Status = STATUS_NOT_SUPPORTED;
+                __leave;
+            }
+
+        case FilePositionInformation:
+            {
+                PFILE_POSITION_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_POSITION_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_POSITION_INFORMATION) SystemBuffer;
+
+                Buffer->CurrentByteOffset = FileObject->CurrentByteOffset;
+
+                Irp->IoStatus.Information = sizeof(FILE_POSITION_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileAllInformation:
+            {
+                PFILE_ALL_INFORMATION       FileAllInformation;
+                PFILE_BASIC_INFORMATION     FileBasicInformation;
+                PFILE_STANDARD_INFORMATION  FileStandardInformation;
+                PFILE_INTERNAL_INFORMATION  FileInternalInformation;
+                PFILE_EA_INFORMATION        FileEaInformation;
+                PFILE_POSITION_INFORMATION  FilePositionInformation;
+
+                if (Length < sizeof(FILE_ALL_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                FileAllInformation = (PFILE_ALL_INFORMATION) SystemBuffer;
+
+                FileBasicInformation =
+                    &FileAllInformation->BasicInformation;
+
+                FileStandardInformation =
+                    &FileAllInformation->StandardInformation;
+
+                FileInternalInformation =
+                    &FileAllInformation->InternalInformation;
+
+                FileEaInformation =
+                    &FileAllInformation->EaInformation;
+
+                FilePositionInformation =
+                    &FileAllInformation->PositionInformation;
+
+                FileBasicInformation->CreationTime.QuadPart = 0;
+
+                FileBasicInformation->LastAccessTime.QuadPart = 0;
+
+                FileBasicInformation->LastWriteTime.QuadPart = 0;
+
+                FileBasicInformation->ChangeTime.QuadPart = 0;
+
+				FileBasicInformation->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
+
+                FileStandardInformation->AllocationSize.QuadPart = tslib_file_size(Fcb);
+
+                FileStandardInformation->EndOfFile.QuadPart = tslib_file_size(Fcb);
+
+                FileStandardInformation->NumberOfLinks = 1;
+
+                FileStandardInformation->DeletePending = FALSE;
+
+                FileStandardInformation->Directory = tslib_file_is_dir( Fcb);
+				if ( tslib_file_is_dir( Fcb))
+				{
+					SetFlag(FileBasicInformation->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+				}
+
+                // The "inode number"
+				FileInternalInformation->IndexNumber.QuadPart = tslib_file_inode_number( Fcb);
+
+                // Romfs doesn't have any extended attributes
+                FileEaInformation->EaSize = 0;
+
+                FilePositionInformation->CurrentByteOffset =
+                    FileObject->CurrentByteOffset;
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        case FileNetworkOpenInformation:
+            {
+                PFILE_NETWORK_OPEN_INFORMATION Buffer;
+
+                if (Length < sizeof(FILE_NETWORK_OPEN_INFORMATION))
+                {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+                }
+
+                Buffer = (PFILE_NETWORK_OPEN_INFORMATION) SystemBuffer;
+
+                Buffer->CreationTime.QuadPart = 0;
+
+                Buffer->LastAccessTime.QuadPart = 0;
+
+                Buffer->LastWriteTime.QuadPart = 0;
+
+                Buffer->ChangeTime.QuadPart = 0;
+
+                Buffer->AllocationSize.QuadPart = tslib_file_size(Fcb);
+
+                Buffer->EndOfFile.QuadPart = tslib_file_size(Fcb);
+
+				Buffer->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
+				SetFlag(Buffer->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+
+                Irp->IoStatus.Information =
+                    sizeof(FILE_NETWORK_OPEN_INFORMATION);
+                Status = STATUS_SUCCESS;
+                __leave;
+            }
+
+        default:
+            Status = STATUS_INVALID_INFO_CLASS;
+        }
+    }
+    __finally
+	{
+		IoCompleteRequest(
+			irpc->irp,
+			(NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT)
+			);
+
+		ExFreePool(irpc);
+	}
+
+    return Status;
 }
