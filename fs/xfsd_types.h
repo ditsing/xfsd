@@ -166,8 +166,10 @@ struct __TSLIB_(rcu_head)
 
 #ifdef WIN32
 typedef long __TSLIB_(size_t);
+typedef long __TSLIB_(ssize_t);
 #else
 typedef long long __TSLIB_(size_t);
+typedef long long __TSLIB_(ssize_t);
 #endif
 
 

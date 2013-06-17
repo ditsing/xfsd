@@ -110,7 +110,7 @@ out:
 
 static int tslib_get_blocks( struct xfs_inode *, sector_t, size_t, sector_t *, size_t *);
 
-int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
+ssize_t read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 {
 	int error;
 
@@ -153,11 +153,11 @@ int read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 	}
 	mem_cpy( ptr, buf_zero, acc_size);
 
-	return 0;
+	return acc_size;
 out_free_buf:
 	kmem_free_large( buf);
 out:
-	return error;
+	return -error;
 }
 
 /*
@@ -278,7 +278,7 @@ out_unlock:
 	return -error;
 }
 
-long long tslib_file_size( tslib_file_p f)
+unsigned long long tslib_file_size( tslib_file_p f)
 {
 	return f->i_root->i_d.di_size;
 }
@@ -296,4 +296,22 @@ long long tslib_file_inode_number( tslib_file_p f)
 tslib_file_p tslib_file_get_root_dir()
 {
 	return assemble_file_pointer( mount->m_rootip);
+}
+
+bool tslib_file_seek( tslib_file_p f, unsigned long long offset)
+{
+	if ( offset <= tslib_file_size( f))
+	{
+		f->offset = offset;
+		return true;
+	}
+	return false;
+}
+
+int xfs_readdir( xfs_inode_t *dp, void *dirent, size_t bufsize, xfs_off_t *offset, filldir_t filldir);
+int tslib_readdir( tslib_file_p f, xfsd_buf_t *buf, filldir_t fill)
+{
+	unsigned long long org_offset = buf->offset;
+	xfs_readdir( f->i_root, buf, buf->space, buf->offset, fill);
+	return org_offset == buf->offset ? ( buf->unit == 0 ? 2 : -1) : 0;
 }
