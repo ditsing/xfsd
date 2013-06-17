@@ -75,13 +75,18 @@ out:
 
 tslib_file_p open_file2( const char *name)
 {
+	return open_file2_relative( NULL, name);
+}
+
+tslib_file_p open_file2_relative( tslib_file_p dir, const char *name)
+{
 	xfs_ino_t		inum;
 	int			error;
 	uint			lock_mode;
 	struct xfs_name		xfs_name;
 	xfs_inode_t 		*ip;
 
-	xfs_inode_t 		*dp = mount->m_rootip;
+	xfs_inode_t 		*dp = dir ? dir->i_root : mount->m_rootip;
 
 	xfs_name.len = str_len( name);
 	xfs_name.name = ( const unsigned char *) name;
@@ -271,4 +276,24 @@ tslib_get_blocks(
 out_unlock:
 	xfs_iunlock(ip, lockmode);
 	return -error;
+}
+
+long long tslib_file_size( tslib_file_p f)
+{
+	return f->i_root->i_d.di_size;
+}
+
+int tslib_file_is_dir( tslib_file_p f)
+{
+	return S_ISDIR(f->i_root->i_d.di_mode);
+}
+
+long long tslib_file_inode_number( tslib_file_p f)
+{
+	return f->i_root->i_ino;
+}
+
+tslib_file_p tslib_file_get_root_dir()
+{
+	return assemble_file_pointer( mount->m_rootip);
 }
