@@ -26,8 +26,6 @@ int read_disk_file( void *ptr, size_t size, size_t nmemb)
 {
 	IO_STATUS_BLOCK ios;
 	NTSTATUS status = ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL);
-	KdPrint(("Read size %u get %lx from %p\n", size, (LONG)status, file));
-	KdPrint(("Info %lx is %lu\n", (LONG)ios.Status, (ULONG)ios.Information));
 	if ( !NT_SUCCESS( status))
 	{
 		if ( open_disk_file( NULL, NULL))
@@ -36,8 +34,6 @@ int read_disk_file( void *ptr, size_t size, size_t nmemb)
 			return 1;
 		}
 		status = ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL);
-		KdPrint(("Read size %u get %lx from %p\n", size, (LONG)status, file));
-		KdPrint(("Info %lx is %lu\n", (LONG)ios.Status, (ULONG)ios.Information));
 	}
 	return NT_SUCCESS( status) ? 1 : 0;
 }

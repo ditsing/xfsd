@@ -631,11 +631,6 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 
 NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 {
-	if ( file->DeviceObject == NULL)
-	{
-		KdPrint(("Looking for file %wZ\n", &file->FileName));
-	}
-
 	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
 	ULONG cache_l = file->FileName.Length >> 1;
 	CHAR *cache = ( CHAR *)ExAllocatePool( PagedPool, cache_l + 1);
@@ -662,7 +657,7 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		}
 	}
 
-	while ( fcb && tslib_file_is_dir( fcb) && leg != cache + cache_l + 1)
+	while ( fcb && leg != cache + cache_l + 1 && *leg && tslib_file_is_dir( fcb))
 	{
 		PCHAR next = leg;
 		while ( *next && *next != '\\')
@@ -717,8 +712,8 @@ NTSTATUS xfsd_driver_create( PDEVICE_OBJECT DevObj, PIRP Irp)
 	}
 	else
 	{
-		/*
 		KdPrint(("Creating file name %wZ\n", &irpsp->FileObject->FileName));
+		/*
 		KdPrint(("Creating file length %ld\n", (long)irpsp->FileObject->FileName.Length));
 		*/
 
@@ -1044,13 +1039,10 @@ struct xfsd_buf_str_head
 int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 	unsigned long long index, unsigned type)
 {
-	KdPrint(("filldir called with offset %d %llu\n", (int)offset), index);
-
 	xfsd_buf_t *head = ( xfsd_buf_t *)buf;
 
 	ULONG buf_size = head->unit + len * 2 - sizeof(WCHAR);
 	ULONG buf_space = ( (buf_size >> 2) + ((buf_size & 3) ? 1 : 0)) << 2;
-	KdPrint(("Need space %ld\n", buf_space));
 
 	if ( head->unit == 0 || buf_space > head->space)
 	{
@@ -1111,16 +1103,10 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 	int ret_code = 0;
 	int found = 0;
 
-	{
-		tslib_file_p test_fcb = open_file2(".");
-		if ( !test_fcb)
-		{
-			KdPrint(("Not find test_fcb at root.\n"));
-		}
-	}
-
     __try
     {
+		KdPrint(("Get IRP_MJ_DIRECTORY_CONTROL, MN: %x\n", IrpSp->MinorFunction));
+
 		if ( IrpSp->MinorFunction != IRP_MN_QUERY_DIRECTORY)
 		{
 			Status = STATUS_NOT_SUPPORTED;
@@ -1154,7 +1140,6 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		{
 			KdPrint(("At filename %wZ\n", FileName));
 		}
-		DbgBreakPoint();
 
 		Fcb = ( tslib_file_p) FileObject->FsContext;
 		Ccb = ( xfsd_ccb *) FileObject->FsContext2;
@@ -1257,13 +1242,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 
 		ret_code = 0;
 		found = 0;
-		{
-			tslib_file_p test_fcb = open_file2(".");
-			if ( !test_fcb)
-			{
-				KdPrint(("Not find test_fcb at root.\n"));
-			}
-		}
+		
 		while ( len && ret_code != -1 &&
 			( ret_code = tslib_readdir( Fcb, head, xfsd_driver_filldir)) <= 0)
 		{
@@ -1277,9 +1256,6 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 				RtlInitAnsiString( &ans_name, str_head->name);
 				RtlAnsiStringToUnicodeString( &name, &ans_name, TRUE);
 
-				KdPrint(("Got filename %wZ\n", &name));
-
-				DbgBreakPoint();
 				if ( FsRtlIsNameInExpression( &Ccb->pattern, &name, FALSE, NULL))
 				{
 					PFILE_OBJECT file = xfsd_driver_build_file( &open_file, str_head->name, str_head->namelen);
@@ -1342,17 +1318,9 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		Irp->IoStatus.Status = Status;
 		IoCompleteRequest( Irp, (NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT) );
 
-		DbgBreakPoint();
-
 		if ( head != NULL)
 		{
 			ExFreePool(head);
-			/*
-			if ( name.Buffer != NULL)
-			{
-				ExFreePool(name.Buffer);
-			}
-			*/
 		}
 		ExFreePool(irpc);
     }
