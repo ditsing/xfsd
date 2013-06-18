@@ -100,7 +100,6 @@ tslib_file_p open_file2_relative( tslib_file_p dir, const char *name)
 		goto out;
 
 	error = xfs_iget(dp->i_mount, NULL, inum, 0, 0, &ip);
-	sys_break();
 	if (error)
 		goto out;
 

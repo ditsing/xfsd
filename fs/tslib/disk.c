@@ -11,9 +11,12 @@ int open_disk_file( const char *name, const char *mode)
 	UNICODE_STRING filename;
 	NTSTATUS nts;
 
+	/*
 	RtlInitUnicodeString( &filename, L"\\DosDevices\\C:\\xfsd\\disk\\xfs.lib");
+	*/
+	RtlInitUnicodeString( &filename, L"\\Device\\HarddiskVolume3\\xfsd\\disk\\xfs.lib");
 	InitializeObjectAttributes( &attr, &filename, OBJ_CASE_INSENSITIVE, NULL, NULL);
-	nts = ZwOpenFile( &file, GENERIC_ALL, &attr, &ios, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
+	nts = ZwOpenFile( &file, GENERIC_READ, &attr, &ios, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
 
 	return !NT_SUCCESS(nts);
 }
@@ -22,7 +25,21 @@ LARGE_INTEGER offset = {0};
 int read_disk_file( void *ptr, size_t size, size_t nmemb)
 {
 	IO_STATUS_BLOCK ios;
-	return NT_SUCCESS( ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL)) ? 1 : 0;
+	NTSTATUS status = ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL);
+	KdPrint(("Read size %u get %lx from %p\n", size, (LONG)status, file));
+	KdPrint(("Info %lx is %lu\n", (LONG)ios.Status, (ULONG)ios.Information));
+	if ( !NT_SUCCESS( status))
+	{
+		if ( open_disk_file( NULL, NULL))
+		{
+			KdPrint(("Open disk failed too.\n"));
+			return 1;
+		}
+		status = ZwReadFile( file, NULL, NULL, NULL, &ios ,ptr, size * nmemb, &offset, NULL);
+		KdPrint(("Read size %u get %lx from %p\n", size, (LONG)status, file));
+		KdPrint(("Info %lx is %lu\n", (LONG)ios.Status, (ULONG)ios.Information));
+	}
+	return NT_SUCCESS( status) ? 1 : 0;
 }
 
 int seek_disk_file_set( long o)
