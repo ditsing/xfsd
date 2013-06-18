@@ -61,6 +61,7 @@ tslib_file_p assemble_file_pointer( xfs_inode_t *ip)
 	if ( head == NULL)
 	{
 		head = &fp->node;
+		head->prev = head->next = head;
 	}
 	else
 	{
