@@ -49,6 +49,25 @@ typedef struct _xfsd_ccb
 	ULONG inuse;
 } xfsd_ccb;
 
+void init_test()
+{
+	char test_cache[101];
+	DbgBreakPoint();
+	tslib_file_p test_file = open_file2("xfsd_types.h");
+	if ( test_file)
+	{
+		long long ret = read_file2( test_file, test_cache, 100);
+		test_cache[100] = '\0';
+		KdPrint(("Read length %lld %s\n", ret, test_cache));
+	}
+	else
+	{
+		KdPrint(("Open test file failed.\n"));
+		DbgBreakPoint();
+	}
+	DbgBreakPoint();
+}
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath)
 {
 	if ( tslib_init())
@@ -56,6 +75,8 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 		KdPrint(("INIT ERROR!\n"));
 		return STATUS_FAILED_DRIVER_ENTRY;
 	}
+	init_test();
+
 	UNICODE_STRING DeviceName,Win32Device;
 	PDEVICE_OBJECT DeviceObject = NULL;
 	NTSTATUS status;
@@ -666,6 +687,7 @@ NTSTATUS xfsd_driver_create( PDEVICE_OBJECT DevObj, PIRP Irp)
 	PIO_STACK_LOCATION irpsp = irpc->sp;
 
 	NTSTATUS status = STATUS_SUCCESS;
+	irpc->file->FsContext = irpc->file->FsContext2 = NULL;
 	if ( DevObj == fs_dev)
 	{
 		KdPrint(("opening fs_dev\n"));
@@ -682,7 +704,7 @@ NTSTATUS xfsd_driver_create( PDEVICE_OBJECT DevObj, PIRP Irp)
 	}
 	else
 	{
-		KdPrint(("Creating file name %s\n", irpsp->FileObject->FileName.Buffer));
+		KdPrint(("Creating file name %wZ\n", &irpsp->FileObject->FileName));
 		KdPrint(("Creating file length %ld\n", (long)irpsp->FileObject->FileName.Length));
 
 		PFILE_OBJECT file = irpsp->FileObject;
@@ -990,14 +1012,12 @@ PFILE_OBJECT xfsd_driver_build_file( const char *name, int len)
 	xfsd_driver_char_to_wchar( file->FileName.Buffer, name, len);
 	file->FileName.Length = len * 2;
 
-	xfsd_driver_lookup( file);
-
 	return file;
 }
 
 struct xfsd_buf_str_head
 {
-	PVOID next;
+	xfsd_buf_str_head *next;
 	int namelen;
 	char *name;
 };
@@ -1005,10 +1025,13 @@ struct xfsd_buf_str_head
 int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 	unsigned long long index, unsigned type)
 {
+	KdPrint(("filldir called with offset %d %llu\n", (int)offset), index);
+
 	xfsd_buf_t *head = ( xfsd_buf_t *)buf;
 
 	ULONG buf_size = head->unit + len * 2 - sizeof(WCHAR);
 	ULONG buf_space = ( (buf_size >> 2) + ((buf_size & 3) ? 1 : 0)) << 2;
+	KdPrint(("Need space %ld\n", buf_space));
 
 	if ( head->unit == 0 || buf_space > head->space)
 	{
@@ -1025,9 +1048,10 @@ int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 	RtlCopyMemory( str->name, name, len);
 	*(str->name + len) = '\0';
 
-	str->next = head->cur = (PVOID) ((PUCHAR)head->cur + buf_space);
+	str->next = ( xfsd_buf_str_head *) ( head->cur = (PVOID) ((PUCHAR)head->cur + buf_space));
 	head->space -= buf_space;
 
+	DbgBreakPoint();
 	return 0;
 }
 
@@ -1060,6 +1084,13 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 	VOID					(* fill_info)( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
 	UNICODE_STRING			name;
 	ANSI_STRING				ans_name;
+
+	PVOID buf_head;
+	PVOID last_assigned = NULL;
+	ULONG len;
+
+	int ret_code = 0;
+	int found = 0;
 
 	DbgBreakPoint();
     __try
@@ -1190,12 +1221,12 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		head->unit = QueryBlockLength;
 		head->offset = 0;
 
-		PVOID buf_head = UserBuffer;
-		PVOID last_assigned = NULL;
-		ULONG len = Length;
+		buf_head = UserBuffer;
+		last_assigned = NULL;
+		len = Length;
 
-		int ret_code = 0;
-		int found = 0;
+		ret_code = 0;
+		found = 0;
 		while ( len && ret_code != -1 &&
 			( ret_code = tslib_readdir( Fcb, head, xfsd_driver_filldir)) <= 0)
 		{
@@ -1203,14 +1234,18 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 			xfsd_buf_str_head *str_head = ( xfsd_buf_str_head *)buf_head;
 			while ( str_head != head->cur)
 			{
-				xfsd_buf_str_head *str_next = ( xfsd_buf_str_head *)str_head->next;
+				xfsd_buf_str_head *str_next = str_head->next;
 				++found;
 
 				RtlInitAnsiString( &ans_name, str_head->name);
 				RtlAnsiStringToUnicodeString( &name, &ans_name, TRUE);
 
+				KdPrint(("Got filename %wZ\n", &name));
+
+				DbgBreakPoint();
 				if ( FsRtlIsNameInExpression( &name, &Ccb->pattern, FALSE, NULL))
 				{
+					DbgBreakPoint();
 					PFILE_OBJECT file = xfsd_driver_build_file( str_head->name, str_head->namelen);
 					file->RelatedFileObject = FileObject;
 					if ( NT_SUCCESS( xfsd_driver_lookup( file)))
@@ -1234,6 +1269,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 						DbgBreakPoint();
 					}
 				}
+				DbgBreakPoint();
 
 				str_head = str_next;
 			}
@@ -1255,6 +1291,8 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 			}
 			else
 			{
+				// Set next entry offset to zero;
+				*(ULONG *) last_assigned = 0;
 				UsedLength = Length - len;
 				Status = STATUS_SUCCESS;
 			}
