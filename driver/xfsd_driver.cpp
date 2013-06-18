@@ -51,11 +51,12 @@ typedef struct _xfsd_ccb
 
 void init_test()
 {
-	char test_cache[101];
+	char *test_cache = ( char *)ExAllocatePool( NonPagedPool, 101);
 	DbgBreakPoint();
 	tslib_file_p test_file = open_file2("xfsd_types.h");
 	if ( test_file)
 	{
+		DbgBreakPoint();
 		long long ret = read_file2( test_file, test_cache, 100);
 		test_cache[100] = '\0';
 		KdPrint(("Read length %lld %s\n", ret, test_cache));
@@ -1243,7 +1244,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 				KdPrint(("Got filename %wZ\n", &name));
 
 				DbgBreakPoint();
-				if ( FsRtlIsNameInExpression( &name, &Ccb->pattern, FALSE, NULL))
+				if ( FsRtlIsNameInExpression( &Ccb->pattern, &name, FALSE, NULL))
 				{
 					DbgBreakPoint();
 					PFILE_OBJECT file = xfsd_driver_build_file( str_head->name, str_head->namelen);
