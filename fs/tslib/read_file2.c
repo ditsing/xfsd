@@ -319,5 +319,5 @@ int tslib_readdir( tslib_file_p f, xfsd_buf_t *buf, filldir_t fill)
 	xfs_readdir( f->i_root, buf, buf->space, &ret_offset, fill);
 
 	buf->offset = ret_offset;
-	return org_offset == ret_offset ? ( buf->unit == 0 ? 2 : -1) : 0;
+	return buf->unit == 0 ? ( org_offset == ret_offset ? 2 : 0) : -1;
 }
