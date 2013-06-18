@@ -165,8 +165,8 @@ struct __TSLIB_(rcu_head)
 #define NBBY		8		/* number of bits per byte */
 
 #ifdef WIN32
-typedef long __TSLIB_(size_t);
-typedef long __TSLIB_(ssize_t);
+typedef unsigned int __TSLIB_(size_t);
+typedef unsigned int __TSLIB_(ssize_t);
 #else
 typedef long long __TSLIB_(size_t);
 typedef long long __TSLIB_(ssize_t);

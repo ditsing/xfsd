@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include "disk.h"
-
 #ifdef WIN32
 #include <ntddk.h>
+#include "disk.h"
 
 static HANDLE file;
 
@@ -39,6 +37,9 @@ void close_disk_file()
 }
 
 #else
+#include <stdio.h>
+#include "disk.h"
+
 static FILE *file;
 
 int open_disk_file( const char *name, const char *mode)
@@ -95,5 +96,7 @@ int tslib_read_disk_block( long long block, void *data, int bytes)
 int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
 {
 	seek_disk_file_set( offset);
+	KdPrint(("Readding from offset %ld, %ld, %d\n", offset, (LONG) size, sizeof( size_t)));
+	DbgBreakPoint();
 	return read_disk_file( ptr, size, nmemb);
 }
