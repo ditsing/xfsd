@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 void xfsd_driverUnload(IN PDRIVER_OBJECT DriverObject);
+DRIVER_DISPATCH xfsd_driverDefaultHandler;
 NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 #ifdef __cplusplus
@@ -17,8 +18,10 @@ NTSTATUS try_open_device( UNICODE_STRING device);
 NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS xfsd_driver_create( IN PDEVICE_OBJECT DevObj, IN PIRP Irp);
+NTSTATUS xfsd_driver_close(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS xfsd_driver_info( IN PDEVICE_OBJECT DevObj, IN PIRP Irp);
 NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
+NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 static PDEVICE_OBJECT fs_dev;
 static PDEVICE_OBJECT fs_vol;
@@ -39,6 +42,13 @@ typedef struct _xfsd_vcb
 	tslib_file_p root_dir;
 } xfsd_vcb;
 
+typedef struct _xfsd_ccb
+{
+	UNICODE_STRING pattern;
+	ULONG offset;
+	ULONG inuse;
+} xfsd_ccb;
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath)
 {
 	if ( tslib_init())
@@ -58,9 +68,12 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 		DriverObject->MajorFunction[i] = xfsd_driverDefaultHandler;
 
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = xfsd_driver_create;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = xfsd_driver_close;
+	DriverObject->MajorFunction[IRP_MJ_READ] = xfsd_driver_read;
 	DriverObject->MajorFunction[IRP_MJ_FILE_SYSTEM_CONTROL] = xfsd_driver_filesystem_control;
 	DriverObject->MajorFunction[IRP_MJ_QUERY_VOLUME_INFORMATION] = xfsd_driver_vol_info;
 	DriverObject->MajorFunction[IRP_MJ_QUERY_INFORMATION] = xfsd_driver_info;
+	DriverObject->MajorFunction[IRP_MJ_DIRECTORY_CONTROL] = xfsd_driver_directory_control;
 	
 	DriverObject->DriverUnload = xfsd_driverUnload;
 	status = IoCreateDevice(DriverObject,
@@ -319,18 +332,14 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	irpc = xfsd_alloc_irpc( DeviceObject, Irp);
 	irpsp = irpc->sp;
 
-//	irpsp = IoGetCurrentIrpStackLocation(Irp);
 	irpsp = Irp->Tail.Overlay.CurrentStackLocation;
 	switch ( irpsp->MajorFunction)
 	{
 	case IRP_MJ_CLOSE:
 		name = "IRP_MJ_CLOSE";
-		Irp->IoStatus.Status = STATUS_SUCCESS;
-		IoCompleteRequest(Irp, IO_NO_INCREMENT);
 		break;
 	case IRP_MJ_READ:
 		name = "IRP_MJ_READ";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 		break;
 	case IRP_MJ_QUERY_INFORMATION:
 		name = "IRP_MJ_QUERY_INFO";
@@ -369,12 +378,61 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	return Irp->IoStatus.Status;
 }
 
+NTSTATUS xfsd_driver_close(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+{
+	IrpContext *irpc = xfsd_alloc_irpc( DeviceObject, Irp);
+	NTSTATUS status = STATUS_SUCCESS;
+
+	ExFreePool(irpc);
+	Irp->IoStatus.Status = status;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	return status;
+}
+
 NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
-	Irp->IoStatus.Status = STATUS_SUCCESS;
-	Irp->IoStatus.Information = 0;
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-	return STATUS_SUCCESS;
+	IrpContext *irpc = xfsd_alloc_irpc( DeviceObject, Irp);
+	NTSTATUS status;
+	ULONG len = irpc->sp->Parameters.Read.Length;
+	LARGE_INTEGER offset = irpc->sp->Parameters.Read.ByteOffset;
+	PVOID userbuffer = Irp->UserBuffer;
+
+	tslib_file_p fcb = (tslib_file_p)irpc->file->FsContext;
+	__try
+	{
+		if ( irpc->MinorFunction != IRP_MN_NORMAL)
+		{
+			status = STATUS_NOT_SUPPORTED;
+			__leave;
+		}
+
+		if (Irp->RequestorMode != KernelMode &&
+            !Irp->MdlAddress &&
+            Irp->UserBuffer)
+        {
+            ProbeForWrite(Irp->UserBuffer, len, 1);
+        }
+
+		if ( !tslib_file_seek( fcb, offset.QuadPart))
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
+
+		SSIZE_T retlen = read_file2( fcb, userbuffer, len);
+		status = retlen >= 0 ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+		len = retlen;
+	}
+	__finally
+	{
+		ExFreePool(irpc);
+		Irp->IoStatus.Status = status;
+		Irp->IoStatus.Information = NT_SUCCESS(status) ? len : 0;
+		IoCompleteRequest(Irp, NT_SUCCESS(status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT);
+	}
+
+	return status;
 }
 
 NTSTATUS xfsd_driver_verify_magic_number( PDEVICE_OBJECT dev)
@@ -511,9 +569,9 @@ NTSTATUS xfsd_driver_user_request ( IrpContext *irpc)
 
     default:
         Status = STATUS_INVALID_DEVICE_REQUEST;
-        irpc->irp->IoStatus.Status = Status;
-        IoCompleteRequest(irpc->irp, IO_NO_INCREMENT);
     }
+	irpc->irp->IoStatus.Status = Status;
+	IoCompleteRequest(irpc->irp, IO_NO_INCREMENT);
 
     return Status;
 }
@@ -540,7 +598,6 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
 	}
 	KdPrint(("Return %ld\n", status));
-	DbgBreakPoint();
 
 	ExFreePool(irpc);
 	return status;
@@ -549,7 +606,7 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 {
 	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
-	ULONG cache_l = file->FileName.Length << 1;
+	ULONG cache_l = file->FileName.Length >> 1;
 	CHAR *cache = ( CHAR *)ExAllocatePool( PagedPool, cache_l + 1);
 	xfsd_driver_wchar_to_char( cache, file->FileName.Buffer, cache_l);
 	*(cache + cache_l) = '\0';
@@ -560,6 +617,10 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 	if ( *leg == '\\')
 	{
 		++leg;
+		if ( !*leg)
+		{
+			++leg;
+		}
 	}
 	else
 	{
@@ -583,10 +644,19 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		leg = next + 1;
 	}
 
+	xfsd_ccb *ccb = ( xfsd_ccb *)ExAllocatePool( NonPagedPool, sizeof( xfsd_ccb));
+	ccb->offset = 0;
+	ccb->inuse = 0;
+	ccb->pattern.Buffer = NULL;
+	ccb->pattern.Length = ccb->pattern.MaximumLength = 0;
+
 	file->FsContext = (PVOID) fcb;
+	file->FsContext2 = (PVOID) ccb;
 	file->PrivateCacheMap = NULL;
 	file->SectionObjectPointer = NULL;
 	file->Vpb = vcb->vpb;
+
+	ExFreePool(cache);
 	return fcb ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
@@ -911,4 +981,391 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 	}
 
     return Status;
+}
+
+PFILE_OBJECT xfsd_driver_build_file( const char *name, int len)
+{
+	PFILE_OBJECT file = (PFILE_OBJECT) ExAllocatePool( NonPagedPool, sizeof(FILE_OBJECT));
+	file->FileName.Buffer = (PWCHAR) ExAllocatePool( NonPagedPool, len * 2);
+	xfsd_driver_char_to_wchar( file->FileName.Buffer, name, len);
+	file->FileName.Length = len * 2;
+
+	xfsd_driver_lookup( file);
+
+	return file;
+}
+
+struct xfsd_buf_str_head
+{
+	PVOID next;
+	int namelen;
+	char *name;
+};
+
+int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
+	unsigned long long index, unsigned type)
+{
+	xfsd_buf_t *head = ( xfsd_buf_t *)buf;
+
+	ULONG buf_size = head->unit + len * 2 - sizeof(WCHAR);
+	ULONG buf_space = ( (buf_size >> 2) + ((buf_size & 3) ? 1 : 0)) << 2;
+
+	if ( head->unit == 0 || buf_space > head->space)
+	{
+		head->unit = 0;
+		return 1;
+	}
+
+	head->offset = offset;
+
+	xfsd_buf_str_head *str = ( xfsd_buf_str_head *)head->cur;
+
+	str->namelen = len;
+	str->name = ( char *)(str + 1);
+	RtlCopyMemory( str->name, name, len);
+	*(str->name + len) = '\0';
+
+	str->next = head->cur = (PVOID) ((PUCHAR)head->cur + buf_space);
+	head->space -= buf_space;
+
+	return 0;
+}
+
+VOID xfsd_driver_fill_both_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
+VOID xfsd_driver_fill_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
+VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
+VOID xfsd_driver_fill_dir_name_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
+
+NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+{
+	IrpContext				*irpc = xfsd_alloc_irpc( DeviceObject, Irp);
+    NTSTATUS                Status = STATUS_UNSUCCESSFUL;
+	xfsd_vcb                *Vcb = ( xfsd_vcb *) fs_vol->DeviceExtension;
+    PFILE_OBJECT            FileObject;
+    tslib_file_p            Fcb;
+	xfsd_ccb				*Ccb;
+	PIO_STACK_LOCATION      IrpSp = irpc->sp;
+    FILE_INFORMATION_CLASS  FileInformationClass;
+    ULONG                   Length;
+    PUNICODE_STRING         FileName;
+    ULONG                   FileIndex;
+    BOOLEAN                 RestartScan;
+    BOOLEAN                 ReturnSingleEntry;
+    BOOLEAN                 IndexSpecified;
+    PUCHAR                  UserBuffer;
+    BOOLEAN                 FirstQuery = FALSE;
+    ULONG                   QueryBlockLength;
+    ULONG                   UsedLength = 0;
+	xfsd_buf_t				*head = NULL;
+	VOID					(* fill_info)( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
+	UNICODE_STRING			name;
+	ANSI_STRING				ans_name;
+
+	DbgBreakPoint();
+    __try
+    {
+		if ( IrpSp->MinorFunction != IRP_MN_QUERY_DIRECTORY)
+		{
+			Status = STATUS_NOT_SUPPORTED;
+			__leave;
+		}
+
+        if (DeviceObject == fs_dev)
+        {
+            Status = STATUS_INVALID_DEVICE_REQUEST;
+            __leave;
+        }
+
+		FileObject = irpc->file;
+
+        FileInformationClass =
+            IrpSp->Parameters.QueryDirectory.FileInformationClass;
+
+        Length = IrpSp->Parameters.QueryDirectory.Length;
+
+        FileName = IrpSp->Parameters.QueryDirectory.FileName;
+
+        FileIndex = IrpSp->Parameters.QueryDirectory.FileIndex;
+
+        RestartScan = FlagOn(IrpSp->Flags, SL_RESTART_SCAN);
+        ReturnSingleEntry = FlagOn(IrpSp->Flags, SL_RETURN_SINGLE_ENTRY);
+        IndexSpecified = FlagOn(IrpSp->Flags, SL_INDEX_SPECIFIED);
+
+		KdPrint(("Get IRP_MJ_DIRECOTORY_CONTROL Restartscan %d, ReturnSingle %d, Index %d\n",
+			RestartScan, ReturnSingleEntry, IndexSpecified));
+		KdPrint(("At filename %s\n", FileName->Buffer));
+
+		Fcb = ( tslib_file_p) FileObject->FsContext;
+		Ccb = ( xfsd_ccb *) FileObject->FsContext2;
+
+        if ( !tslib_file_is_dir(Fcb))
+        {
+            Status = STATUS_INVALID_PARAMETER;
+            __leave;
+        }
+
+        if (Irp->RequestorMode != KernelMode &&
+            !Irp->MdlAddress &&
+            Irp->UserBuffer)
+        {
+            ProbeForWrite(Irp->UserBuffer, Length, 1);
+        }
+
+		if (Irp->MdlAddress)
+		{
+			KdPrint(("Using mdldress!!\n"));
+			DbgBreakPoint();
+			UserBuffer = (PUCHAR) MmGetSystemAddressForMdl(Irp->MdlAddress);
+		}
+		else
+		{
+			UserBuffer = (PUCHAR) Irp->UserBuffer;
+		}
+
+		if ( RestartScan || !Ccb->inuse)
+		{
+			FirstQuery = TRUE;
+			if (FileName == NULL)
+			{
+				KdPrint(("NULL Filename with NULL CCB!!\n"));
+				Status = STATUS_INVALID_PARAMETER;
+				__leave;
+			}
+
+			xfsd_driver_init_string( &Ccb->pattern, FileName);
+			Ccb->offset = 0;
+			Ccb->inuse = 1;
+		}
+
+        if (UserBuffer == NULL)
+        {
+            Status = STATUS_INVALID_USER_BUFFER;
+            __leave;
+        }
+
+        if (IndexSpecified)
+        {
+			KdPrint(("Using Index to query.\n"));
+			Status = STATUS_NOT_SUPPORTED;
+			__leave;
+        }
+
+        RtlZeroMemory(UserBuffer, Length);
+
+        switch (FileInformationClass)
+        {
+        case FileDirectoryInformation:
+            QueryBlockLength = sizeof(FILE_DIRECTORY_INFORMATION);
+			fill_info = xfsd_driver_fill_dir_info;
+            break;
+
+        case FileFullDirectoryInformation:
+            QueryBlockLength = sizeof(FILE_FULL_DIR_INFORMATION);
+			fill_info = xfsd_driver_fill_full_dir_info;
+            break;
+
+        case FileNamesInformation:
+            QueryBlockLength = sizeof(FILE_NAMES_INFORMATION);
+			fill_info = xfsd_driver_fill_dir_name_info;
+            break;
+
+		case FileBothDirectoryInformation:
+            QueryBlockLength = sizeof(FILE_BOTH_DIR_INFORMATION);
+			fill_info = xfsd_driver_fill_both_dir_info;
+            break;
+
+        default:
+            Status = STATUS_INVALID_PARAMETER;
+            __leave;
+        }
+		if (Length < QueryBlockLength)
+		{
+			Status = STATUS_INFO_LENGTH_MISMATCH;
+			__leave;
+		}
+
+		head = ( xfsd_buf_t *)ExAllocatePool( NonPagedPool, sizeof( xfsd_buf_t));
+		head->cur = UserBuffer;
+		head->space = Length;
+		head->unit = QueryBlockLength;
+		head->offset = 0;
+
+		PVOID buf_head = UserBuffer;
+		PVOID last_assigned = NULL;
+		ULONG len = Length;
+
+		int ret_code = 0;
+		int found = 0;
+		while ( len && ret_code != -1 &&
+			( ret_code = tslib_readdir( Fcb, head, xfsd_driver_filldir)) <= 0)
+		{
+			DbgBreakPoint();
+			xfsd_buf_str_head *str_head = ( xfsd_buf_str_head *)buf_head;
+			while ( str_head != head->cur)
+			{
+				xfsd_buf_str_head *str_next = ( xfsd_buf_str_head *)str_head->next;
+				++found;
+
+				RtlInitAnsiString( &ans_name, str_head->name);
+				RtlAnsiStringToUnicodeString( &name, &ans_name, TRUE);
+
+				if ( FsRtlIsNameInExpression( &name, &Ccb->pattern, FALSE, NULL))
+				{
+					PFILE_OBJECT file = xfsd_driver_build_file( str_head->name, str_head->namelen);
+					file->RelatedFileObject = FileObject;
+					if ( NT_SUCCESS( xfsd_driver_lookup( file)))
+					{
+						ULONG space = (PUCHAR)str_head->next - (PUCHAR)str_head;
+						fill_info( buf_head, space, file);
+
+						last_assigned = buf_head;
+						buf_head = (PUCHAR)buf_head + space;
+						len -= space;
+
+						if ( ReturnSingleEntry)
+						{
+							ret_code = -1;
+							break;
+						}
+					}
+					else
+					{
+						KdPrint(("What's the fuck with the filename ? "));
+						DbgBreakPoint();
+					}
+				}
+
+				str_head = str_next;
+			}
+
+			head->cur = buf_head;
+			head->space = len;
+			head->unit = QueryBlockLength;
+		}
+
+		if ( ret_code > 0 && found == 0)
+		{
+			Status = STATUS_INFO_LENGTH_MISMATCH;
+		}
+		else
+		{
+			if ( last_assigned == NULL)
+			{
+				Status = FirstQuery ? STATUS_NO_SUCH_FILE : STATUS_NO_MORE_FILES;
+			}
+			else
+			{
+				UsedLength = Length - len;
+				Status = STATUS_SUCCESS;
+			}
+		}
+    }
+    __finally
+    {
+		DbgBreakPoint();
+		if ( head != NULL)
+		{
+			ExFreePool(head);
+			if ( name.Buffer != NULL)
+			{
+				ExFreePool(name.Buffer);
+			}
+		}
+		KdPrint(("Return %ld\n", Status));
+		Irp->IoStatus.Information = UsedLength;
+		Irp->IoStatus.Status = Status;
+		IoCompleteRequest( Irp, (NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT) );
+
+		ExFreePool(irpc);
+    }
+
+	return Status;
+}
+
+VOID xfsd_driver_fill_both_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
+{
+	tslib_file_p fcb = ( tslib_file_p)file->FsContext;
+
+	PFILE_BOTH_DIR_INFORMATION info = (PFILE_BOTH_DIR_INFORMATION) Buffer;
+	info->NextEntryOffset = Space;
+	info->FileIndex = tslib_file_inode_number( fcb);
+	info->CreationTime.QuadPart =
+		info->LastAccessTime.QuadPart =
+		info->ChangeTime.QuadPart =
+		info->LastWriteTime.QuadPart = 0;
+	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+
+	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
+	if ( tslib_file_is_dir( fcb))
+	{
+		SetFlag( info->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	info->EaSize = 0;
+	info->FileNameLength = file->FileName.Length;
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+	// TODO Short names.
+}
+
+VOID xfsd_driver_fill_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
+{
+	tslib_file_p fcb = ( tslib_file_p)file->FsContext;
+
+	PFILE_DIRECTORY_INFORMATION info = (PFILE_DIRECTORY_INFORMATION) Buffer;
+	info->NextEntryOffset = Space;
+	info->FileIndex = tslib_file_inode_number( fcb);
+	info->CreationTime.QuadPart =
+		info->LastAccessTime.QuadPart =
+		info->ChangeTime.QuadPart =
+		info->LastWriteTime.QuadPart = 0;
+	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+
+	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
+	if ( tslib_file_is_dir( fcb))
+	{
+		SetFlag( info->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	info->FileNameLength = file->FileName.Length;
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+}
+
+VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
+{
+	tslib_file_p fcb = ( tslib_file_p)file->FsContext;
+
+	PFILE_FULL_DIR_INFORMATION info = (PFILE_FULL_DIR_INFORMATION) Buffer;
+
+	info->NextEntryOffset = Space;
+	info->FileIndex = tslib_file_inode_number( fcb);
+	info->CreationTime.QuadPart =
+		info->LastAccessTime.QuadPart =
+		info->ChangeTime.QuadPart =
+		info->LastWriteTime.QuadPart = 0;
+	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+
+	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
+	if ( tslib_file_is_dir( fcb))
+	{
+		SetFlag( info->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	info->EaSize = 0;
+
+	info->FileNameLength = file->FileName.Length;
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+}
+
+VOID xfsd_driver_fill_dir_name_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
+{
+	tslib_file_p fcb = ( tslib_file_p)file->FsContext;
+
+	PFILE_NAMES_INFORMATION info = (PFILE_NAMES_INFORMATION) Buffer;
+
+	info->NextEntryOffset = Space;
+
+	info->FileIndex = tslib_file_inode_number( fcb);
+
+	info->FileNameLength = file->FileName.Length;
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
 }
