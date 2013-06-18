@@ -21,6 +21,10 @@ VOID xfsd_driver_char_to_wchar( WCHAR *dest, const CHAR *source, ULONG len)
 VOID xfsd_driver_init_string( PUNICODE_STRING dest, PUNICODE_STRING source)
 {
 	dest->Length = dest->MaximumLength = source->Length;
+	if ( dest->Buffer)
+	{
+		ExFreePool( dest->Buffer);
+	}
 	dest->Buffer = (PWCHAR) ExAllocatePool( NonPagedPool, source->Length * 2);
 	RtlCopyUnicodeString( dest, source);
 }

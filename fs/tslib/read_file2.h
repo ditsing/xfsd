@@ -11,13 +11,13 @@ typedef struct xfsd_buf
 	void * cur;
 	unsigned long space;
 	unsigned long unit;
-	unsigned long long offset;
+	long long offset;
 } xfsd_buf_t;
 
 int tslib_file_init();
 tslib_file_p open_file2( const char *name);
 tslib_file_p open_file2_relative( tslib_file_p dir, const char *name);
-ssize_t read_file2( tslib_file_p fp, void *ptr, size_t size);
+unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t size);
 int read_file2_by_name( const char *name, void *ptr, size_t size);
 
 unsigned long long tslib_file_size( tslib_file_p f);

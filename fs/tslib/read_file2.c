@@ -110,7 +110,7 @@ out:
 
 static int tslib_get_blocks( struct xfs_inode *, sector_t, size_t, sector_t *, size_t *);
 
-ssize_t read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
+unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 {
 	int error;
 
@@ -311,7 +311,10 @@ bool tslib_file_seek( tslib_file_p f, unsigned long long offset)
 int xfs_readdir( xfs_inode_t *dp, void *dirent, size_t bufsize, xfs_off_t *offset, filldir_t filldir);
 int tslib_readdir( tslib_file_p f, xfsd_buf_t *buf, filldir_t fill)
 {
-	unsigned long long org_offset = buf->offset;
-	xfs_readdir( f->i_root, buf, buf->space, buf->offset, fill);
-	return org_offset == buf->offset ? ( buf->unit == 0 ? 2 : -1) : 0;
+	xfs_off_t ret_offset = buf->offset;
+	xfs_off_t org_offset = buf->offset;
+	xfs_readdir( f->i_root, buf, buf->space, &ret_offset, fill);
+
+	buf->offset = ret_offset;
+	return org_offset == ret_offset ? ( buf->unit == 0 ? 2 : -1) : 0;
 }
