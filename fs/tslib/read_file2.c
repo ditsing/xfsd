@@ -302,14 +302,14 @@ tslib_file_p tslib_file_get_root_dir()
 	return assemble_file_pointer( mount->m_rootip);
 }
 
-bool tslib_file_seek( tslib_file_p f, unsigned long long offset)
+int tslib_file_seek( tslib_file_p f, unsigned long long offset)
 {
 	if ( offset <= tslib_file_size( f))
 	{
 		f->offset = offset;
-		return true;
+		return 1;
 	}
-	return false;
+	return 0;
 }
 
 int xfs_readdir( xfs_inode_t *dp, void *dirent, size_t bufsize, xfs_off_t *offset, filldir_t filldir);

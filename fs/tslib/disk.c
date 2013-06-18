@@ -96,7 +96,5 @@ int tslib_read_disk_block( long long block, void *data, int bytes)
 int read_disk_file_length( void *ptr, long offset, size_t size, size_t nmemb)
 {
 	seek_disk_file_set( offset);
-	KdPrint(("Readding from offset %ld, %ld, %d\n", offset, (LONG) size, sizeof( size_t)));
-	DbgBreakPoint();
 	return read_disk_file( ptr, size, nmemb);
 }

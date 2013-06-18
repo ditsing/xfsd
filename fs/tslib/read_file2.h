@@ -24,7 +24,7 @@ unsigned long long tslib_file_size( tslib_file_p f);
 int tslib_file_is_dir( tslib_file_p f);
 long long tslib_file_inode_number( tslib_file_p f);
 tslib_file_p tslib_file_get_root_dir();
-bool tslib_file_seek( tslib_file_p f, unsigned long long offset);
+int tslib_file_seek( tslib_file_p f, unsigned long long offset);
 
 
 typedef int (* filldir_t)( void *buf, const char *name, int len, long long offset, unsigned long long index, unsigned type);

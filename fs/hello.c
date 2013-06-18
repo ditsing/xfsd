@@ -49,6 +49,12 @@ int main()
 		printf("Got nothing!\n");
 	}
 
+	fp = open_file2("xfsd_types.h");
+	if ( !fp)
+	{
+		printf("Got nothing!\n");
+	}
+
 	memset( tmp, 0, sizeof( tmp));
 	fp = open_file2("/xfsd/xfsd.h");
 	if ( fp)
@@ -62,7 +68,7 @@ int main()
 		printf("Got nothing!\n");
 	}
 
-	xfs_fs_exit();
+	tslib_exit();
 
 	return 0;
 }

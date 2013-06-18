@@ -168,8 +168,7 @@ struct __TSLIB_(rcu_head)
 typedef unsigned int __TSLIB_(size_t);
 typedef unsigned int __TSLIB_(ssize_t);
 #else
-typedef long long __TSLIB_(size_t);
-typedef long long __TSLIB_(ssize_t);
+typedef unsigned long __TSLIB_(size_t);
 #endif
 
 
