@@ -63,7 +63,14 @@ void init_test()
 	{
 		KdPrint(("Open test file failed.\n"));
 	}
+
 	DbgBreakPoint();
+	test_file = open_file2("xfsd_types.h");
+	if ( !test_file)
+	{
+		KdPrint(("What's wrong with xfsd_types.h, inode 131?\n"));
+		DbgBreakPoint();
+	}
 }
 
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  RegistryPath)
@@ -627,7 +634,6 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 	if ( file->DeviceObject == NULL)
 	{
 		KdPrint(("Looking for file %wZ\n", &file->FileName));
-		DbgBreakPoint();
 	}
 
 	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
@@ -665,10 +671,6 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		}
 		*next = '\0';
 
-		if ( file->DeviceObject == NULL)
-		{
-			DbgBreakPoint();
-		}
 		fcb = open_file2_relative( fcb, leg);
 		leg = next + 1;
 	}
@@ -686,10 +688,6 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		file->PrivateCacheMap = NULL;
 		file->SectionObjectPointer = NULL;
 		file->Vpb = vcb->vpb;
-	}
-	else
-	{
-		KdPrint(("Try open directly %p\n", open_file2(cache)));
 	}
 
 	ExFreePool(cache);
@@ -719,20 +717,26 @@ NTSTATUS xfsd_driver_create( PDEVICE_OBJECT DevObj, PIRP Irp)
 	}
 	else
 	{
+		/*
 		KdPrint(("Creating file name %wZ\n", &irpsp->FileObject->FileName));
 		KdPrint(("Creating file length %ld\n", (long)irpsp->FileObject->FileName.Length));
+		*/
 
 		PFILE_OBJECT file = irpsp->FileObject;
 		if ( NT_SUCCESS( xfsd_driver_lookup( file)))
 		{
+			/*
 			KdPrint(("Creating File done.\n"));
+			*/
 			Irp->IoStatus.Status = STATUS_SUCCESS;
 			Irp->IoStatus.Information = FILE_OPENED;
 			IoCompleteRequest(Irp, IO_DISK_INCREMENT);
 		}
 		else
 		{
+			/*
 			KdPrint(("Creating File Failed.\n"));
+			*/
 			status = Irp->IoStatus.Status = STATUS_OBJECT_NAME_NOT_FOUND;
 			IoCompleteRequest(Irp, IO_NO_INCREMENT);
 		}
@@ -1032,6 +1036,7 @@ PFILE_OBJECT xfsd_driver_build_file( PFILE_OBJECT file, const char *name, int le
 struct xfsd_buf_str_head
 {
 	xfsd_buf_str_head *next;
+	int offset;
 	int namelen;
 	char *name;
 };
@@ -1053,9 +1058,9 @@ int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 		return 1;
 	}
 
-	head->offset = offset;
-
 	xfsd_buf_str_head *str = ( xfsd_buf_str_head *)head->cur;
+
+	str->offset = head->offset = offset;
 
 	str->namelen = len;
 	str->name = ( char *)(str + 1);
@@ -1106,7 +1111,14 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 	int ret_code = 0;
 	int found = 0;
 
-	DbgBreakPoint();
+	{
+		tslib_file_p test_fcb = open_file2(".");
+		if ( !test_fcb)
+		{
+			KdPrint(("Not find test_fcb at root.\n"));
+		}
+	}
+
     __try
     {
 		if ( IrpSp->MinorFunction != IRP_MN_QUERY_DIRECTORY)
@@ -1137,8 +1149,12 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
         IndexSpecified = FlagOn(IrpSp->Flags, SL_INDEX_SPECIFIED);
 
 		KdPrint(("Get IRP_MJ_DIRECOTORY_CONTROL Restartscan %d, ReturnSingle %d, Index %d\n",
-			RestartScan, ReturnSingleEntry, IndexSpecified));
-		KdPrint(("At filename %s\n", FileName->Buffer));
+			(int)RestartScan, (int)ReturnSingleEntry, (int)IndexSpecified));
+		if ( FileName)
+		{
+			KdPrint(("At filename %wZ\n", FileName));
+		}
+		DbgBreakPoint();
 
 		Fcb = ( tslib_file_p) FileObject->FsContext;
 		Ccb = ( xfsd_ccb *) FileObject->FsContext2;
@@ -1233,7 +1249,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		head->cur = UserBuffer;
 		head->space = Length;
 		head->unit = QueryBlockLength;
-		head->offset = 0;
+		head->offset = Ccb->offset;
 
 		buf_head = UserBuffer;
 		last_assigned = NULL;
@@ -1241,15 +1257,22 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 
 		ret_code = 0;
 		found = 0;
+		{
+			tslib_file_p test_fcb = open_file2(".");
+			if ( !test_fcb)
+			{
+				KdPrint(("Not find test_fcb at root.\n"));
+			}
+		}
 		while ( len && ret_code != -1 &&
 			( ret_code = tslib_readdir( Fcb, head, xfsd_driver_filldir)) <= 0)
 		{
-			DbgBreakPoint();
 			xfsd_buf_str_head *str_head = ( xfsd_buf_str_head *)buf_head;
 			while ( str_head != head->cur)
 			{
 				xfsd_buf_str_head *str_next = str_head->next;
 				++found;
+				ULONG str_offset = str_head->offset;
 
 				RtlInitAnsiString( &ans_name, str_head->name);
 				RtlAnsiStringToUnicodeString( &name, &ans_name, TRUE);
@@ -1273,6 +1296,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 
 						if ( ReturnSingleEntry)
 						{
+							head->offset = str_offset + 1;
 							ret_code = -1;
 							break;
 						}
@@ -1282,7 +1306,6 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 						KdPrint(("What's the fuck with the filename ?\n"));
 					}
 				}
-				DbgBreakPoint();
 
 				str_head = str_next;
 			}
@@ -1307,13 +1330,14 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 				// Set next entry offset to zero;
 				*(ULONG *) last_assigned = 0;
 				UsedLength = Length - len;
+				Ccb->offset = head->offset;
 				Status = STATUS_SUCCESS;
 			}
 		}
     }
     __finally
     {
-		KdPrint(("Return %ld\n", Status));
+		KdPrint(("Return %lx\n", Status));
 		Irp->IoStatus.Information = UsedLength;
 		Irp->IoStatus.Status = Status;
 		IoCompleteRequest( Irp, (NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT) );
@@ -1323,10 +1347,12 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		if ( head != NULL)
 		{
 			ExFreePool(head);
+			/*
 			if ( name.Buffer != NULL)
 			{
 				ExFreePool(name.Buffer);
 			}
+			*/
 		}
 		ExFreePool(irpc);
     }
@@ -1355,7 +1381,7 @@ VOID xfsd_driver_fill_both_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 
 	info->EaSize = 0;
 	info->FileNameLength = file->FileName.Length;
-	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength);
 	// TODO Short names.
 }
 
@@ -1379,7 +1405,7 @@ VOID xfsd_driver_fill_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
 	}
 
 	info->FileNameLength = file->FileName.Length;
-	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength);
 }
 
 VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
@@ -1405,7 +1431,7 @@ VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 	info->EaSize = 0;
 
 	info->FileNameLength = file->FileName.Length;
-	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength);
 }
 
 VOID xfsd_driver_fill_dir_name_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
@@ -1419,5 +1445,5 @@ VOID xfsd_driver_fill_dir_name_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 	info->FileIndex = tslib_file_inode_number( fcb);
 
 	info->FileNameLength = file->FileName.Length;
-	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength * 2);
+	RtlCopyMemory( info->FileName, file->FileName.Buffer, info->FileNameLength);
 }
