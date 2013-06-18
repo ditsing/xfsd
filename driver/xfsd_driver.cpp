@@ -665,21 +665,32 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		}
 		*next = '\0';
 
+		if ( file->DeviceObject == NULL)
+		{
+			DbgBreakPoint();
+		}
 		fcb = open_file2_relative( fcb, leg);
 		leg = next + 1;
 	}
 
-	xfsd_ccb *ccb = ( xfsd_ccb *)ExAllocatePool( NonPagedPool, sizeof( xfsd_ccb));
-	ccb->offset = 0;
-	ccb->inuse = 0;
-	ccb->pattern.Buffer = NULL;
-	ccb->pattern.Length = ccb->pattern.MaximumLength = 0;
+	if ( fcb)
+	{
+		xfsd_ccb *ccb = ( xfsd_ccb *)ExAllocatePool( NonPagedPool, sizeof( xfsd_ccb));
+		ccb->offset = 0;
+		ccb->inuse = 0;
+		ccb->pattern.Buffer = NULL;
+		ccb->pattern.Length = ccb->pattern.MaximumLength = 0;
 
-	file->FsContext = (PVOID) fcb;
-	file->FsContext2 = (PVOID) ccb;
-	file->PrivateCacheMap = NULL;
-	file->SectionObjectPointer = NULL;
-	file->Vpb = vcb->vpb;
+		file->FsContext = (PVOID) fcb;
+		file->FsContext2 = (PVOID) ccb;
+		file->PrivateCacheMap = NULL;
+		file->SectionObjectPointer = NULL;
+		file->Vpb = vcb->vpb;
+	}
+	else
+	{
+		KdPrint(("Try open directly %p\n", open_file2(cache)));
+	}
 
 	ExFreePool(cache);
 	return fcb ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
@@ -1268,7 +1279,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 					}
 					else
 					{
-						KdPrint(("What's the fuck with the filename ? "));
+						KdPrint(("What's the fuck with the filename ?\n"));
 					}
 				}
 				DbgBreakPoint();
