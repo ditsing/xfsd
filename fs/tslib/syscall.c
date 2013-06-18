@@ -23,6 +23,11 @@ void ddk_mem_free( const void *ptr)
 	ExFreePool( ( void *)ptr);
 }
 
+void sys_break()
+{
+	DbgBreakPoint();
+}
+
 #else
 #include <stdio.h>
 #include <string.h>
@@ -75,6 +80,10 @@ void *mem_realloc( void *p, size_t size)
 {
 	return realloc( p, size);
 }
+void sys_break()
+{
+}
+
 #endif
 
 void *mem_cpy( void *dst, const void *src, size_t n)

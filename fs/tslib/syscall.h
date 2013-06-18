@@ -21,6 +21,7 @@ void *mem_realloc( void *p, size_t size);
 void *ddk_mem_alloc( size_t size, unsigned flags);
 void ddk_mem_free( const void *ptr);
 void *ddk_mem_zalloc( size_t size, unsigned flags);
+void sys_break();
 #endif
 
 #ifndef __IN_TSLIB__
