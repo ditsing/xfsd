@@ -52,19 +52,16 @@ typedef struct _xfsd_ccb
 void init_test()
 {
 	char *test_cache = ( char *)ExAllocatePool( NonPagedPool, 101);
-	DbgBreakPoint();
 	tslib_file_p test_file = open_file2("xfsd_types.h");
 	if ( test_file)
 	{
-		DbgBreakPoint();
-		long long ret = read_file2( test_file, test_cache, 100);
+		int ret = read_file2( test_file, test_cache, 100);
 		test_cache[100] = '\0';
-		KdPrint(("Read length %lld %s\n", ret, test_cache));
+		KdPrint(("Read length %d %s\n", ret, test_cache));
 	}
 	else
 	{
 		KdPrint(("Open test file failed.\n"));
-		DbgBreakPoint();
 	}
 	DbgBreakPoint();
 }
@@ -627,6 +624,12 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 
 NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 {
+	if ( file->DeviceObject == NULL)
+	{
+		KdPrint(("Looking for file %wZ\n", &file->FileName));
+		DbgBreakPoint();
+	}
+
 	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
 	ULONG cache_l = file->FileName.Length >> 1;
 	CHAR *cache = ( CHAR *)ExAllocatePool( PagedPool, cache_l + 1);
@@ -1006,9 +1009,8 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
     return Status;
 }
 
-PFILE_OBJECT xfsd_driver_build_file( const char *name, int len)
+PFILE_OBJECT xfsd_driver_build_file( PFILE_OBJECT file, const char *name, int len)
 {
-	PFILE_OBJECT file = (PFILE_OBJECT) ExAllocatePool( NonPagedPool, sizeof(FILE_OBJECT));
 	file->FileName.Buffer = (PWCHAR) ExAllocatePool( NonPagedPool, len * 2);
 	xfsd_driver_char_to_wchar( file->FileName.Buffer, name, len);
 	file->FileName.Length = len * 2;
@@ -1052,7 +1054,6 @@ int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 	str->next = ( xfsd_buf_str_head *) ( head->cur = (PVOID) ((PUCHAR)head->cur + buf_space));
 	head->space -= buf_space;
 
-	DbgBreakPoint();
 	return 0;
 }
 
@@ -1085,6 +1086,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 	VOID					(* fill_info)( PVOID Buffer, ULONG Space, PFILE_OBJECT file);
 	UNICODE_STRING			name;
 	ANSI_STRING				ans_name;
+	FILE_OBJECT				open_file;
 
 	PVOID buf_head;
 	PVOID last_assigned = NULL;
@@ -1246,9 +1248,9 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 				DbgBreakPoint();
 				if ( FsRtlIsNameInExpression( &Ccb->pattern, &name, FALSE, NULL))
 				{
-					DbgBreakPoint();
-					PFILE_OBJECT file = xfsd_driver_build_file( str_head->name, str_head->namelen);
+					PFILE_OBJECT file = xfsd_driver_build_file( &open_file, str_head->name, str_head->namelen);
 					file->RelatedFileObject = FileObject;
+					file->DeviceObject = NULL;
 					if ( NT_SUCCESS( xfsd_driver_lookup( file)))
 					{
 						ULONG space = (PUCHAR)str_head->next - (PUCHAR)str_head;
@@ -1267,7 +1269,6 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 					else
 					{
 						KdPrint(("What's the fuck with the filename ? "));
-						DbgBreakPoint();
 					}
 				}
 				DbgBreakPoint();
@@ -1301,7 +1302,13 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
     }
     __finally
     {
+		KdPrint(("Return %ld\n", Status));
+		Irp->IoStatus.Information = UsedLength;
+		Irp->IoStatus.Status = Status;
+		IoCompleteRequest( Irp, (NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT) );
+
 		DbgBreakPoint();
+
 		if ( head != NULL)
 		{
 			ExFreePool(head);
@@ -1310,11 +1317,6 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 				ExFreePool(name.Buffer);
 			}
 		}
-		KdPrint(("Return %ld\n", Status));
-		Irp->IoStatus.Information = UsedLength;
-		Irp->IoStatus.Status = Status;
-		IoCompleteRequest( Irp, (NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT) );
-
 		ExFreePool(irpc);
     }
 
