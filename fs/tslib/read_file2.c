@@ -139,6 +139,7 @@ unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 	while ( size)
 	{
 		iblock = file_offset >> blkbits;
+		read_size = size;
 		error = tslib_get_blocks( fp->i_root, iblock, size, &start_block, &read_size);
 		if ( error)
 			goto out_free_buf;
@@ -225,6 +226,7 @@ tslib_get_blocks(
 
 	if (XFS_FORCED_SHUTDOWN(mp))
 		return -XFS_ERROR(EIO);
+	isize = isize < ( 1 << blkbits) ? ( 1 << blkbits) : isize;
 
 	offset = (xfs_off_t)iblock << blkbits;
 	ASSERT(isize >= (1 << blkbits));
