@@ -23,6 +23,15 @@ NTSTATUS xfsd_driver_info( IN PDEVICE_OBJECT DevObj, IN PIRP Irp);
 NTSTATUS xfsd_driver_vol_info(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
+/*
+BOOLEAN xfsd_driver_lazy_write( IN PVOID Context, IN BOOLEAN Wait) { return TRUE;}
+VOID xfsd_driver_from_lazy_write( IN PVOID Context) { return;}
+BOOLEAN xfsd_driver_lazy_read( IN PVOID Context, IN BOOLEAN Wait) { return TRUE;}
+VOID xfsd_driver_from_lazy_read( IN PVOID Context) { return;}
+
+CACHE_MANAGER_CALLBACKS xfsd_driver_call_back;
+*/
+
 static PDEVICE_OBJECT fs_dev;
 static PDEVICE_OBJECT fs_vol;
 
@@ -64,7 +73,6 @@ void init_test()
 		KdPrint(("Open test file failed.\n"));
 	}
 
-	DbgBreakPoint();
 	test_file = open_file2("xfsd_types.h");
 	if ( !test_file)
 	{
@@ -100,6 +108,13 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 	DriverObject->MajorFunction[IRP_MJ_QUERY_VOLUME_INFORMATION] = xfsd_driver_vol_info;
 	DriverObject->MajorFunction[IRP_MJ_QUERY_INFORMATION] = xfsd_driver_info;
 	DriverObject->MajorFunction[IRP_MJ_DIRECTORY_CONTROL] = xfsd_driver_directory_control;
+
+	/*
+	xfsd_driver_call_back.AcquireForLazyWrite = xfsd_driver_lazy_write;
+	xfsd_driver_call_back.ReleaseFromLazyWrite = xfsd_driver_from_lazy_write;
+	xfsd_driver_call_back.AcquireForReadAhead = xfsd_driver_lazy_read;
+	xfsd_driver_call_back.ReleaseFromReadAhead = xfsd_driver_from_lazy_read;
+	*/
 	
 	DriverObject->DriverUnload = xfsd_driverUnload;
 	status = IoCreateDevice(DriverObject,
@@ -361,44 +376,22 @@ NTSTATUS xfsd_driverDefaultHandler(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	irpsp = Irp->Tail.Overlay.CurrentStackLocation;
 	switch ( irpsp->MajorFunction)
 	{
-	case IRP_MJ_CLOSE:
-		name = "IRP_MJ_CLOSE";
-		break;
-	case IRP_MJ_READ:
-		name = "IRP_MJ_READ";
-		break;
-	case IRP_MJ_QUERY_INFORMATION:
-		name = "IRP_MJ_QUERY_INFO";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		break;
-	case IRP_MJ_QUERY_VOLUME_INFORMATION:
-		name = "IRP_MJ_QUERY_VOLUME_INFO";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		break;
-	case IRP_MJ_DIRECTORY_CONTROL:
-		name = "IRP_MJ_DIR_CONTROL";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		break;
-	case IRP_MJ_FILE_SYSTEM_CONTROL:
-		name = "IRP_MJ_SYS_CONTROL";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		break;
 	case IRP_MJ_DEVICE_CONTROL:
 		name = "IRP_MJ_DEV_CONTROL";
-	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		DbgBreakPoint();
 		break;
 	case IRP_MJ_CLEANUP:
-		name = "IRP_MJ_CLEANUP";
-		Irp->IoStatus.Status = STATUS_SUCCESS;
-		IoCompleteRequest(Irp, IO_DISK_INCREMENT);
-		break;
+	case IRP_MJ_SET_INFORMATION:
 	case IRP_MJ_FLUSH_BUFFERS:
 	case IRP_MJ_SHUTDOWN:
+		name = "CLSETFLSH";
 		Irp->IoStatus.Status = STATUS_SUCCESS;
 		IoCompleteRequest(Irp, IO_DISK_INCREMENT);
 		break;
 	default:
 		KdPrint(("Unexpected major function: %#x\n", irpsp->MajorFunction ));
+		DbgBreakPoint();
 	};
 	KdPrint(("Get IRP:: %s at %p\n", name, DeviceObject));
 	return Irp->IoStatus.Status;
@@ -422,33 +415,96 @@ NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	NTSTATUS status;
 	ULONG len = irpc->sp->Parameters.Read.Length;
 	LARGE_INTEGER offset = irpc->sp->Parameters.Read.ByteOffset;
-	PVOID userbuffer = Irp->UserBuffer;
+	PVOID userbuffer = (PVOID) (
+		(irpc->irp->MdlAddress == NULL) ?
+		irpc->irp->UserBuffer
+		: (MmGetSystemAddressForMdlSafe( irpc->irp->MdlAddress, NormalPagePriority)));
 
 	tslib_file_p fcb = (tslib_file_p)irpc->file->FsContext;
+	FsRtlEnterFileSystem();
 	__try
 	{
-		if ( irpc->MinorFunction != IRP_MN_NORMAL)
+		if ( irpc->MinorFunction != IRP_MN_NORMAL && irpc->MinorFunction != IRP_MN_MDL)
 		{
 			status = STATUS_NOT_SUPPORTED;
 			__leave;
 		}
 
-		if (Irp->RequestorMode != KernelMode &&
-            !Irp->MdlAddress &&
-            Irp->UserBuffer)
-        {
-            ProbeForWrite(Irp->UserBuffer, len, 1);
-        }
-
-		if ( !tslib_file_seek( fcb, offset.QuadPart))
+		/*
+		if ( !FlagOn( irpc->file->Flags, FO_SYNCHRONOUS_IO))
 		{
-			status = STATUS_INVALID_PARAMETER;
+			KdPrint(("Require async\n"));
+			status = STATUS_NOT_SUPPORTED;
 			__leave;
 		}
+		*/
 
-		SSIZE_T retlen = read_file2( fcb, userbuffer, len);
-		status = retlen >= 0 ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-		len = retlen;
+		/*
+		if ( !FlagOn( Irp->Flags, IRP_NOCACHE))
+		{
+			KdPrint(("Require cache\n"));
+			DbgBreakPoint();
+
+			if (irpc->sp->FileObject->PrivateCacheMap == NULL) {
+				irpc->file->SectionObjectPointer =
+					(PSECTION_OBJECT_POINTERS)
+					ExAllocatePool( NonPagedPool, sizeof( SECTION_OBJECT_POINTERS));
+				irpc->file->SectionObjectPointer->DataSectionObject
+					= irpc->file->SectionObjectPointer->ImageSectionObject
+					= irpc->file->SectionObjectPointer->SharedCacheMap = NULL;
+
+				CC_FILE_SIZES fs;
+				fs.AllocationSize.QuadPart = fs.FileSize.QuadPart = fs.ValidDataLength.QuadPart
+					= tslib_file_size( fcb);
+
+				KdPrint(("size is %ld\n", (LONG) tslib_file_size( fcb)));
+				DbgBreakPoint();
+				CcInitializeCacheMap( irpc->file, &fs, FALSE, &xfsd_driver_call_back, NULL);
+			}
+
+			if ( irpc->MinorFunction != IRP_MN_MDL)
+			{
+				if (!CcCopyRead( irpc->file, &offset, len, 0, userbuffer, &Irp->IoStatus))
+				{
+						status = STATUS_CANT_WAIT;
+						__leave;
+				}
+				status = Irp->IoStatus.Status;
+
+				if ( !NT_SUCCESS(status))
+				{
+					status = STATUS_UNEXPECTED_IO_ERROR;
+				}
+			}
+			else
+			{
+				CcMdlRead( irpc->file, &offset, len, &Irp->MdlAddress, &Irp->IoStatus);
+				status = Irp->IoStatus.Status;
+			}
+		}
+		else
+		*/
+		{
+			if (Irp->RequestorMode != KernelMode &&
+				!Irp->MdlAddress &&
+				Irp->UserBuffer)
+			{
+				ProbeForWrite(Irp->UserBuffer, len, 1);
+			}
+
+			if ( !tslib_file_seek( fcb, offset.QuadPart))
+			{
+				status = STATUS_END_OF_FILE;
+				__leave;
+			}
+
+			SSIZE_T retlen = read_file2( fcb, userbuffer, len);
+			status = retlen >= 0 ?
+				(retlen < len ? STATUS_END_OF_FILE : STATUS_SUCCESS)
+				: STATUS_UNSUCCESSFUL;
+			len = retlen;
+			irpc->file->CurrentByteOffset.QuadPart = offset.QuadPart + len;
+		}
 	}
 	__finally
 	{
@@ -456,6 +512,9 @@ NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		Irp->IoStatus.Status = status;
 		Irp->IoStatus.Information = NT_SUCCESS(status) ? len : 0;
 		IoCompleteRequest(Irp, NT_SUCCESS(status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT);
+		FsRtlExitFileSystem();
+		KdPrint(("IRP_MJ_READ, return %lx %lu\n", status, (ULONG)(Irp->IoStatus.Information)));
+		DbgBreakPoint();
 	}
 
 	return status;
@@ -557,6 +616,12 @@ NTSTATUS xfsd_driver_mount_volume( IrpContext *irpc)
 		vcb->vpb = irpc->sp->Parameters.MountVolume.Vpb;
 
 		(irpc->sp->Parameters.MountVolume.Vpb)->DeviceObject = fs_vol;
+
+		fs_vol->Characteristics |= FILE_READ_ONLY_DEVICE;
+		target->Characteristics |= FILE_READ_ONLY_DEVICE;
+		fs_vol->AlignmentRequirement = FILE_WORD_ALIGNMENT;
+		fs_vol->StackSize = 4;
+		fs_vol->Flags &= ~DO_DEVICE_INITIALIZING;
 	}
 	__finally
 	{
@@ -1160,8 +1225,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 		if (Irp->MdlAddress)
 		{
 			KdPrint(("Using mdldress!!\n"));
-			DbgBreakPoint();
-			UserBuffer = (PUCHAR) MmGetSystemAddressForMdl(Irp->MdlAddress);
+			UserBuffer = (PUCHAR) (MmGetSystemAddressForMdlSafe( (irpc)->irp->MdlAddress, NormalPagePriority));
 		}
 		else
 		{
@@ -1345,6 +1409,10 @@ VOID xfsd_driver_fill_both_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 	if ( tslib_file_is_dir( fcb))
 	{
 		SetFlag( info->FileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+	}
+	else
+	{
+		KdPrint(("File name %wZ, size %lu\n", &file->FileName, (ULONG)info->AllocationSize.QuadPart));
 	}
 
 	info->EaSize = 0;
