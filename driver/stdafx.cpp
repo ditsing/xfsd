@@ -30,3 +30,7 @@ VOID xfsd_driver_init_string( PUNICODE_STRING dest, PUNICODE_STRING source)
 	RtlCopyUnicodeString( dest, source);
 }
 
+ULONG xfsd_driver_align_to_blk( ULONG in)
+{
+	return ( ( in >> 9) + ( ( in & 512) ? 1 : 0)) << 9 ;
+}

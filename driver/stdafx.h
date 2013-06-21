@@ -23,3 +23,4 @@ extern "C"
 VOID xfsd_driver_char_to_wchar( WCHAR *dest, const CHAR *source, ULONG len);
 VOID xfsd_driver_wchar_to_char( CHAR *dest, const WCHAR *source, ULONG len);
 VOID xfsd_driver_init_string( PUNICODE_STRING dest, PUNICODE_STRING source);
+ULONG xfsd_driver_align_to_blk( ULONG in);

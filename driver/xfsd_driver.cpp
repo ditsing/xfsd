@@ -139,7 +139,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 
 	fs_dev = DeviceObject;
 
-	DbgBreakPoint();
+//	DbgBreakPoint();
 //	status = try_open_device( Win32Device);
 //	KdPrint(("Got device status %d %ld\n", (int)status, (long) NT_SUCCESS(status)));
 
@@ -421,6 +421,7 @@ NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		: (MmGetSystemAddressForMdlSafe( irpc->irp->MdlAddress, NormalPagePriority)));
 
 	tslib_file_p fcb = (tslib_file_p)irpc->file->FsContext;
+	KdPrint(("IRP_MJ_READ, query len %lu offset ( %lu, %lu), mn %lu\n", len, offset.HighPart, offset.LowPart, (ULONG)irpc->MinorFunction));
 	FsRtlEnterFileSystem();
 	__try
 	{
@@ -495,15 +496,17 @@ NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 			if ( !tslib_file_seek( fcb, offset.QuadPart))
 			{
 				status = STATUS_END_OF_FILE;
+				KdPrint(("offset is too large\n"));
 				__leave;
 			}
 
 			SSIZE_T retlen = read_file2( fcb, userbuffer, len);
 			status = retlen >= 0 ?
-				(retlen < len ? STATUS_END_OF_FILE : STATUS_SUCCESS)
-				: STATUS_UNSUCCESSFUL;
+//				(retlen < len ? STATUS_END_OF_FILE : STATUS_SUCCESS)
+				STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 			len = retlen;
 			irpc->file->CurrentByteOffset.QuadPart = offset.QuadPart + len;
+			KdPrint(("Retlen is %lu\n", (ULONG) retlen));
 		}
 	}
 	__finally
@@ -514,7 +517,7 @@ NTSTATUS xfsd_driver_read(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		IoCompleteRequest(Irp, NT_SUCCESS(status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT);
 		FsRtlExitFileSystem();
 		KdPrint(("IRP_MJ_READ, return %lx %lu\n", status, (ULONG)(Irp->IoStatus.Information)));
-		DbgBreakPoint();
+//		DbgBreakPoint();
 	}
 
 	return status;
@@ -890,7 +893,8 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
                 Buffer = (PFILE_STANDARD_INFORMATION) SystemBuffer;
 
-                Buffer->AllocationSize.QuadPart = tslib_file_size(Fcb);
+                Buffer->AllocationSize.QuadPart = 
+					xfsd_driver_align_to_blk( tslib_file_size(Fcb));
                 Buffer->EndOfFile.QuadPart = tslib_file_size(Fcb);
                 Buffer->NumberOfLinks = 1;
                 Buffer->DeletePending = FALSE;
@@ -1008,7 +1012,8 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
 				FileBasicInformation->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
 
-                FileStandardInformation->AllocationSize.QuadPart = tslib_file_size(Fcb);
+                FileStandardInformation->AllocationSize.QuadPart =
+					xfsd_driver_align_to_blk( tslib_file_size(Fcb));
 
                 FileStandardInformation->EndOfFile.QuadPart = tslib_file_size(Fcb);
 
@@ -1054,7 +1059,8 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
                 Buffer->ChangeTime.QuadPart = 0;
 
-                Buffer->AllocationSize.QuadPart = tslib_file_size(Fcb);
+                Buffer->AllocationSize.QuadPart =
+					xfsd_driver_align_to_blk( tslib_file_size(Fcb));
 
                 Buffer->EndOfFile.QuadPart = tslib_file_size(Fcb);
 
@@ -1403,7 +1409,9 @@ VOID xfsd_driver_fill_both_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 		info->LastAccessTime.QuadPart =
 		info->ChangeTime.QuadPart =
 		info->LastWriteTime.QuadPart = 0;
-	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+	info->AllocationSize.QuadPart =
+					xfsd_driver_align_to_blk( tslib_file_size(fcb));
+	info->EndOfFile.QuadPart = tslib_file_size( fcb);
 
 	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
 	if ( tslib_file_is_dir( fcb))
@@ -1432,7 +1440,9 @@ VOID xfsd_driver_fill_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT file)
 		info->LastAccessTime.QuadPart =
 		info->ChangeTime.QuadPart =
 		info->LastWriteTime.QuadPart = 0;
-	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+	info->AllocationSize.QuadPart =
+					xfsd_driver_align_to_blk( tslib_file_size(fcb));
+	info->EndOfFile.QuadPart = tslib_file_size( fcb);
 
 	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
 	if ( tslib_file_is_dir( fcb))
@@ -1456,7 +1466,9 @@ VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 		info->LastAccessTime.QuadPart =
 		info->ChangeTime.QuadPart =
 		info->LastWriteTime.QuadPart = 0;
-	info->AllocationSize.QuadPart = info->EndOfFile.QuadPart = tslib_file_size( fcb);
+	info->AllocationSize.QuadPart = 
+		xfsd_driver_align_to_blk( tslib_file_size(fcb));
+	info->EndOfFile.QuadPart = tslib_file_size( fcb);
 
 	info->FileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY;
 	if ( tslib_file_is_dir( fcb))
