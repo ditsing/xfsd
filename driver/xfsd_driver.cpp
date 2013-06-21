@@ -115,7 +115,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING  Registr
 	xfsd_driver_call_back.AcquireForReadAhead = xfsd_driver_lazy_read;
 	xfsd_driver_call_back.ReleaseFromReadAhead = xfsd_driver_from_lazy_read;
 	*/
-	
+
 	DriverObject->DriverUnload = xfsd_driverUnload;
 	status = IoCreateDevice(DriverObject,
 							0,
@@ -699,7 +699,7 @@ NTSTATUS xfsd_driver_filesystem_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP 
 
 NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 {
-	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension; 
+	xfsd_vcb *vcb = (xfsd_vcb *)fs_vol->DeviceExtension;
 	ULONG cache_l = file->FileName.Length >> 1;
 	CHAR *cache = ( CHAR *)ExAllocatePool( PagedPool, cache_l + 1);
 	xfsd_driver_wchar_to_char( cache, file->FileName.Buffer, cache_l);
@@ -893,7 +893,7 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
                 Buffer = (PFILE_STANDARD_INFORMATION) SystemBuffer;
 
-                Buffer->AllocationSize.QuadPart = 
+                Buffer->AllocationSize.QuadPart =
 					xfsd_driver_align_to_blk( tslib_file_size(Fcb));
                 Buffer->EndOfFile.QuadPart = tslib_file_size(Fcb);
                 Buffer->NumberOfLinks = 1;
@@ -1079,6 +1079,7 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
     }
     __finally
 	{
+		Irp->IoStatus.Status = Status;
 		IoCompleteRequest(
 			irpc->irp,
 			(NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT)
@@ -1312,7 +1313,7 @@ NTSTATUS xfsd_driver_directory_control(IN PDEVICE_OBJECT DeviceObject, IN PIRP I
 
 		ret_code = 0;
 		found = 0;
-		
+
 		while ( len && ret_code != -1 &&
 			( ret_code = tslib_readdir( Fcb, head, xfsd_driver_filldir)) <= 0)
 		{
@@ -1466,7 +1467,7 @@ VOID xfsd_driver_fill_full_dir_info( PVOID Buffer, ULONG Space, PFILE_OBJECT fil
 		info->LastAccessTime.QuadPart =
 		info->ChangeTime.QuadPart =
 		info->LastWriteTime.QuadPart = 0;
-	info->AllocationSize.QuadPart = 
+	info->AllocationSize.QuadPart =
 		xfsd_driver_align_to_blk( tslib_file_size(fcb));
 	info->EndOfFile.QuadPart = tslib_file_size( fcb);
 
