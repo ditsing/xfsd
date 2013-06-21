@@ -122,9 +122,10 @@ unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 	xfs_fsize_t 		acc_size = size;
 
 	unsigned int 		blkbits = ffs(mount->m_sb.sb_blocksize)-1;
+	xfs_fsize_t 		redun_size = file_offset & ( ( 1 << blkbits) - 1);
 	sector_t 		iblock;
 
-	xfs_fsize_t 		buf_size = ( ( size + mount->m_blockmask) >> blkbits) << blkbits;
+	xfs_fsize_t 		buf_size = ( ( size + redun_size + mount->m_blockmask) >> blkbits) << blkbits;
 
 	void 			*buf = kmem_zalloc_large( buf_size);
 	void 			*buf_zero = buf;
@@ -136,6 +137,9 @@ unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 		error = ENOMEM;
 		goto out;
 	}
+
+	size += redun_size;
+//	redun_size = 0;
 
 	while ( size)
 	{
@@ -153,7 +157,11 @@ unsigned long long read_file2( tslib_file_p fp, void *ptr, size_t ptr_size)
 		buf = ( char *)buf + read_size;
 		size -= read_size < size ? read_size : size;
 	}
-	mem_cpy( ptr, buf_zero, acc_size);
+	if ( fp->offset == 4094)
+	{
+//		sys_break();
+	}
+	mem_cpy( ptr, ( void *)((char *)buf_zero + redun_size), acc_size);
 
 	return acc_size;
 out_free_buf:
@@ -303,7 +311,7 @@ tslib_file_p tslib_file_get_root_dir()
 
 int tslib_file_seek( tslib_file_p f, unsigned long long offset)
 {
-	if ( offset <= tslib_file_size( f))
+	if ( offset < tslib_file_size( f))
 	{
 		f->offset = offset;
 		return 1;
