@@ -751,6 +751,7 @@ NTSTATUS xfsd_driver_lookup( PFILE_OBJECT file)
 		file->PrivateCacheMap = NULL;
 		file->SectionObjectPointer = NULL;
 		file->Vpb = vcb->vpb;
+		file->CurrentByteOffset.QuadPart = 0;
 	}
 
 	ExFreePool(cache);
@@ -947,7 +948,28 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
         case FileNameInformation:
             {
-				Status = STATUS_NOT_SUPPORTED;
+				PFILE_NAME_INFORMATION Buffer;
+
+				PUNICODE_STRING FileName = &FileObject->FileName;
+				ULONG need_size = sizeof(FILE_NAME_INFORMATION) - sizeof( WCHAR) + FileName->Length;
+				if (Length < sizeof(FILE_NAME_INFORMATION))
+				{
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                    __leave;
+				}
+				if (Length < need_size)
+                {
+					Status = STATUS_BUFFER_OVERFLOW;
+                    __leave;
+                }
+
+				Buffer = (PFILE_NAME_INFORMATION) SystemBuffer;
+
+				RtlCopyMemory( Buffer->FileName, FileName->Buffer, FileName->Length);
+				Buffer->FileNameLength = FileName->Length;
+
+                Irp->IoStatus.Information = need_size;
+                Status = STATUS_SUCCESS;
                 __leave;
             }
 
@@ -978,12 +1000,24 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
                 PFILE_INTERNAL_INFORMATION  FileInternalInformation;
                 PFILE_EA_INFORMATION        FileEaInformation;
                 PFILE_POSITION_INFORMATION  FilePositionInformation;
+				PFILE_NAME_INFORMATION		FileNameInformation;
 
-                if (Length < sizeof(FILE_ALL_INFORMATION))
+				PUNICODE_STRING FileName = &FileObject->FileName;
+				ULONG need_size = sizeof(FILE_ALL_INFORMATION) - sizeof( WCHAR) + FileName->Length;
+				KdPrint(("buffer len %lu, need len %lu %lu\n", Length,
+					sizeof(FILE_ALL_INFORMATION), need_size));
+
+				if (Length < sizeof(FILE_ALL_INFORMATION))
                 {
                     Status = STATUS_INFO_LENGTH_MISMATCH;
                     __leave;
                 }
+				if (Length < need_size)
+                {
+					Status = STATUS_BUFFER_OVERFLOW;
+                    __leave;
+                }
+
 
                 FileAllInformation = (PFILE_ALL_INFORMATION) SystemBuffer;
 
@@ -1001,6 +1035,9 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
                 FilePositionInformation =
                     &FileAllInformation->PositionInformation;
+
+				FileNameInformation =
+					&FileAllInformation->NameInformation;
 
                 FileBasicInformation->CreationTime.QuadPart = 0;
 
@@ -1035,6 +1072,21 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
 
                 FilePositionInformation->CurrentByteOffset =
                     FileObject->CurrentByteOffset;
+
+				if ( Length >= need_size)
+				{
+					RtlCopyMemory( FileNameInformation->FileName, FileName->Buffer, FileName->Length);
+					FileNameInformation->FileNameLength = FileName->Length;
+
+					Irp->IoStatus.Information = need_size;
+				}
+				else
+				{
+					FileNameInformation->FileName[0] = 'A';
+					FileNameInformation->FileNameLength = 1;
+					Irp->IoStatus.Information = sizeof(FILE_ALL_INFORMATION);
+				}
+
                 Status = STATUS_SUCCESS;
                 __leave;
             }
@@ -1074,11 +1126,12 @@ NTSTATUS xfsd_driver_info( PDEVICE_OBJECT DevObj, PIRP Irp)
             }
 
         default:
-            Status = STATUS_INVALID_INFO_CLASS;
+			Status = STATUS_INVALID_PARAMETER;
         }
     }
     __finally
 	{
+		KdPrint(("IRP_MJ_QUERY_INFORMATION, for %ld, status %lx\n", (LONG)FileInformationClass, (ULONG) Status));
 		Irp->IoStatus.Status = Status;
 		IoCompleteRequest(
 			irpc->irp,
@@ -1096,6 +1149,7 @@ PFILE_OBJECT xfsd_driver_build_file( PFILE_OBJECT file, const char *name, int le
 	file->FileName.Buffer = (PWCHAR) ExAllocatePool( NonPagedPool, len * 2);
 	xfsd_driver_char_to_wchar( file->FileName.Buffer, name, len);
 	file->FileName.Length = len * 2;
+	file->FileName.MaximumLength = file->FileName.Length;
 
 	return file;
 }
@@ -1105,7 +1159,7 @@ struct xfsd_buf_str_head
 	xfsd_buf_str_head *next;
 	int offset;
 	int namelen;
-	char *name;
+	char name[1];
 };
 
 int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
@@ -1127,9 +1181,8 @@ int xfsd_driver_filldir( void *buf, const char *name, int len, long long offset,
 	str->offset = head->offset = offset;
 
 	str->namelen = len;
-	str->name = ( char *)(str + 1);
 	RtlCopyMemory( str->name, name, len);
-	*(str->name + len) = '\0';
+	str->name[len] = '\0';
 
 	str->next = ( xfsd_buf_str_head *) ( head->cur = (PVOID) ((PUCHAR)head->cur + buf_space));
 	head->space -= buf_space;

@@ -46,7 +46,9 @@ typedef uint		xfs_dir2_data_aoff_t;	/* argument form */
  * Normalized offset (in a data block) of the entry, really xfs_dir2_data_off_t.
  * Only need 16 bits, this is the byte offset into the single block form.
  */
+#pragma pack( push, 1)
 typedef struct { __uint8_t i[2]; } __arch_pack xfs_dir2_sf_off_t;
+#pragma pack( pop)
 
 /*
  * Offset in data space of a data entry.
@@ -94,6 +96,7 @@ typedef union {
  * variable length, and the accessors in this file should be used to iterate
  * over them.
  */
+#pragma pack( push, 1)
 typedef struct xfs_dir2_sf_hdr {
 	__uint8_t		count;		/* count of entries */
 	__uint8_t		i8count;	/* count of 8-byte inode #s */
@@ -109,6 +112,7 @@ typedef struct xfs_dir2_sf_entry {
 	 * variable offset after the name.
 	 */
 } __arch_pack xfs_dir2_sf_entry_t;
+#pragma pack( pop)
 
 static inline int xfs_dir2_sf_hdr_size(int i8count)
 {
